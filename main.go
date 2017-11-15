@@ -18,16 +18,17 @@ func main() {
 	routes := serv.ParseServfile(servfile)
 
 	for _, route := range routes {
-		if serv.IsGit(route) {
-			exists, _ := serv.LocalRepoExists(route.Data)
-
-			if exists == false {
-				_, _ = serv.CheckoutGitRepo(route.Data)
-			}
-		}
-
 		log.Printf("creating handler for %v", route.Path)
-		serv.SetHandler(route)
+
+		if serv.IsGit(route) {
+			if exists, _ := serv.LocalRepoExists(route.Data); exists == false {
+				if _, err = serv.CheckoutGitRepo(route.Data); err != nil {
+					panic(fmt.Sprintf("error checking out git repo: %v", err))
+				}
+			}
+
+			serv.SetDirectoryHandler(route)
+		}
 	}
 
 	log.Println("starting server")
