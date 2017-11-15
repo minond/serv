@@ -16,6 +16,6 @@ example:
 /unibrow      proxy      http://localhost:3001
 ```
 
-With this configuration, serv will checkout all repo and serve them using the
-configured paths. Run `serv` in a directory with your `Servfile` and you're
-done.
+With this configuration, serv will checkout all repositories and serve them
+along with serving or proxying anything else you tell it to. Run `serv` in a
+directory with your `Servfile` and you're done.

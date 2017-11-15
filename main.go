@@ -272,19 +272,25 @@ func main() {
 	for _, route := range routes {
 		log.Printf("creating %v handler for %v\n", route.Type, route.Path)
 
-		if IsGit(route) {
+		switch {
+		case IsGit(route):
 			AssertGitRepo(route.Data)
 			SetGitHandler(mux, route)
-		} else if IsDir(route) {
+
+		case IsDir(route):
 			AssertDir(route.Data)
 			SetDirHandler(mux, route)
-		} else if IsRedirect(route) {
+
+		case IsRedirect(route):
 			SetRedirectHandler(mux, route)
-		} else if IsCmd(route) {
+
+		case IsCmd(route):
 			SetCmdHandler(mux, route)
-		} else if IsProxy(route) {
+
+		case IsProxy(route):
 			SetProxyHandler(mux, route)
-		} else {
+
+		default:
 			panic(fmt.Sprintf("invalid route type `%v` in %v\n", route.Type, route))
 		}
 	}
