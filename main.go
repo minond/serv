@@ -27,7 +27,7 @@ func main() {
 		}
 
 		log.Printf("creating handler for %v", route.Path)
-		http.Handle(route.Path, serv.CreateHandler(route))
+		serv.SetHandler(route)
 	}
 
 	log.Println("starting server")
