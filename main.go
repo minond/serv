@@ -101,8 +101,8 @@ func ParseServfile(raw []byte) (routes []Route) {
 
 // Turns https://github.com/minond/minond.github.io.git into
 // repo/github.com/minond/minond.github.io.git
-func GetRepoPath(repoUrl string) (string, error) {
-	ur, err := url.Parse(repoUrl)
+func GetRepoPath(repoURL string) (string, error) {
+	ur, err := url.Parse(repoURL)
 
 	if err != nil {
 		return "", fmt.Errorf("error parsing url: %v", err)
@@ -112,8 +112,8 @@ func GetRepoPath(repoUrl string) (string, error) {
 }
 
 // Clones repo into local folder
-func CheckoutGitRepo(repoUrl string) (string, error) {
-	path, err := GetRepoPath(repoUrl)
+func CheckoutGitRepo(repoURL string) (string, error) {
+	path, err := GetRepoPath(repoURL)
 
 	if err != nil {
 		return "", err
@@ -126,14 +126,14 @@ func CheckoutGitRepo(repoUrl string) (string, error) {
 		return "", err
 	}
 
-	cmd := exec.Command("git", "clone", repoUrl, path, "--depth=1")
+	cmd := exec.Command("git", "clone", repoURL, path, "--depth=1")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return path, cmd.Run()
 }
 
-func LocalRepoExists(repoUrl string) (bool, error) {
-	path, err := GetRepoPath(repoUrl)
+func LocalRepoExists(repoURL string) (bool, error) {
+	path, err := GetRepoPath(repoURL)
 
 	if err != nil {
 		return false, err
@@ -142,9 +142,9 @@ func LocalRepoExists(repoUrl string) (bool, error) {
 	return DirExists(path)
 }
 
-func AssertGitRepo(repoUrl string) {
-	if exists, _ := LocalRepoExists(repoUrl); exists == false {
-		if _, err := CheckoutGitRepo(repoUrl); err != nil {
+func AssertGitRepo(repoURL string) {
+	if exists, _ := LocalRepoExists(repoURL); exists == false {
+		if _, err := CheckoutGitRepo(repoURL); err != nil {
 			panic(fmt.Sprintf("error checking out git repo: %v", err))
 		}
 	}
@@ -167,8 +167,8 @@ func AssertDir(name string) {
 }
 
 func SetProxyHandler(mux *http.ServeMux, route Route) {
-	proxyUrl, err := url.Parse(route.Data)
-	proxyPath := proxyUrl.Path
+	proxyURL, err := url.Parse(route.Data)
+	proxyPath := proxyURL.Path
 
 	if err != nil {
 		panic(fmt.Sprintf("error parting proxy url (%v): %v", route.Data, err))
@@ -178,11 +178,11 @@ func SetProxyHandler(mux *http.ServeMux, route Route) {
 		oldPath := r.URL.Path
 		newPath := strings.Replace(oldPath, route.Path, "", 1)
 
-		r.URL = proxyUrl
+		r.URL = proxyURL
 		r.URL.Path = proxyPath + newPath
 
 		log.Printf("making request to %v\n", r.URL)
-		handler := httputil.NewSingleHostReverseProxy(proxyUrl)
+		handler := httputil.NewSingleHostReverseProxy(proxyURL)
 		handler.ServeHTTP(w, r)
 	}
 
