@@ -22,14 +22,10 @@ func main() {
 		log.Printf("creating handler for %v", route.Path)
 
 		if serv.IsGit(route) {
-			if exists, _ := serv.LocalRepoExists(route.Data); exists == false {
-				if _, err = serv.CheckoutGitRepo(route.Data); err != nil {
-					panic(fmt.Sprintf("error checking out git repo: %v", err))
-				}
-			}
-
+			serv.AssertGitRepo(route.Data)
 			serv.SetGitHandler(mux, route)
 		} else if serv.IsDirectory(route) {
+			serv.AssertDirectory(route.Data)
 			serv.SetDirectoryHandler(mux, route)
 		}
 	}

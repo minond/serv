@@ -53,11 +53,13 @@ func LocalRepoExists(repoUrl string) (bool, error) {
 		return false, err
 	}
 
-	_, err = os.Stat(path)
+	return DirectoryExists(path)
+}
 
-	if err == nil {
-		return true, nil
+func AssertGitRepo(repoUrl string) {
+	if exists, _ := LocalRepoExists(repoUrl); exists == false {
+		if _, err := CheckoutGitRepo(repoUrl); err != nil {
+			panic(fmt.Sprintf("error checking out git repo: %v", err))
+		}
 	}
-
-	return false, nil
 }
