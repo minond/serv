@@ -165,6 +165,12 @@ func AssertDirectory(name string) {
 	}
 }
 
+func SetRedirectHandler(mux *http.ServeMux, route Route) {
+	mux.HandleFunc(route.Path, func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, route.Data, http.StatusSeeOther)
+	})
+}
+
 func SetDirectoryHandler(mux *http.ServeMux, route Route) {
 	serveFile := func(w http.ResponseWriter, r *http.Request) {
 		filePath := strings.Replace(r.URL.String(), route.Path, "", 1)
@@ -228,7 +234,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	for _, route := range routes {
-		log.Printf("creating handler for %v", route.Path)
+		log.Printf("creating %v handler for %v", route.Type, route.Path)
 
 		if IsGit(route) {
 			AssertGitRepo(route.Data)
@@ -236,6 +242,8 @@ func main() {
 		} else if IsDirectory(route) {
 			AssertDirectory(route.Data)
 			SetDirectoryHandler(mux, route)
+		} else if IsRedirect(route) {
+			SetRedirectHandler(mux, route)
 		}
 	}
 
