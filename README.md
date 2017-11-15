@@ -13,6 +13,7 @@ example:
 /github       redirect   https://github.com/minond
 /ps           cmd        ps aux
 /imdb         proxy      http://www.imdb.com:80
+/unibrow      proxy      http://localhost:3001
 ```
 
 With this configuration, serv will checkout all repo and serve them using the

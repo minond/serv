@@ -178,7 +178,6 @@ func SetProxyHandler(mux *http.ServeMux, route Route) {
 		oldPath := r.URL.Path
 		newPath := strings.Replace(oldPath, route.Path, "", 1)
 
-		r.URL = proxyURL
 		r.URL.Path = proxyPath + newPath
 
 		log.Printf("making request to %v\n", r.URL)
