@@ -11,14 +11,19 @@ import (
 type routeType string
 
 type Route struct {
+	// Top-level url path this route should match to
 	Path string
+
+	// See `routeType`
 	Type routeType
+
+	// Information passed to prep function. Type of data depends on Route.Type
 	Data string
 }
 
 const (
-	routeGit   routeType = "git"
-	routeProxy routeType = "proxy"
+	routeGit   routeType = "git"   // Wants a git url
+	routeProxy routeType = "proxy" // Wants url:port
 )
 
 func GetServfile() ([]byte, error) {
