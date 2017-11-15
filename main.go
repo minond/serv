@@ -16,6 +16,7 @@ func main() {
 	}
 
 	routes := serv.ParseServfile(servfile)
+	mux := http.NewServeMux()
 
 	for _, route := range routes {
 		log.Printf("creating handler for %v", route.Path)
@@ -27,10 +28,10 @@ func main() {
 				}
 			}
 
-			serv.SetDirectoryHandler(route)
+			serv.SetDirectoryHandler(mux, route)
 		}
 	}
 
 	log.Println("starting server")
-	log.Fatal(http.ListenAndServe(":3002", nil))
+	log.Fatal(http.ListenAndServe(":3002", mux))
 }

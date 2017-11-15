@@ -11,7 +11,7 @@ const (
 	indexFile = "index.html"
 )
 
-func SetDirectoryHandler(route Route) {
+func SetDirectoryHandler(mux *http.ServeMux, route Route) {
 	rootPath, _ := GetRepoPath(route.Data)
 
 	serveFile := func(w http.ResponseWriter, r *http.Request) {
@@ -31,9 +31,9 @@ func SetDirectoryHandler(route Route) {
 	}
 
 	if route.Path == "/" {
-		http.HandleFunc(route.Path, serveFile)
+		mux.HandleFunc(route.Path, serveFile)
 	} else {
-		http.HandleFunc(route.Path, slashRedirect)
-		http.HandleFunc(route.Path+"/", serveFile)
+		mux.HandleFunc(route.Path, slashRedirect)
+		mux.HandleFunc(route.Path+"/", serveFile)
 	}
 }
