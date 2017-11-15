@@ -1,16 +1,17 @@
 # Serv
 
-A little server that easily lets you serve git repositories right now and with
-more options to come. Once installed (`go install github.com/minond/serv`),
-create a `Servfile` file that is made up of a path, the type of resource, and
-information about the resource. For example:
+A little server that easily lets you serve git repositories, static files,
+redirects, execute commands, and create reverse proxies. Once installed (`go
+install github.com/minond/serv`), create a `Servfile` file that is made up of a
+path, handler type, and any information needed to create the handler. For
+example:
 
 ```
 /             git        https://github.com/minond/minond.github.io.git
 /servies      git        https://github.com/minond/servies.git
-/brainfuck    git        https://github.com/minond/brainfuck.git
-/brainloller  git        https://github.com/minond/brainloller.git
-/static       directory  .
+/static       dir        .
+/github       redirect   https://github.com/minond
+/ps           cmd        ps aux
 ```
 
 With this configuration, serv will checkout all repo and serve them using the

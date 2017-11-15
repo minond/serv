@@ -165,6 +165,18 @@ func AssertDir(name string) {
 	}
 }
 
+func SetCmdHandler(mux *http.ServeMux, route Route) {
+	mux.HandleFunc(route.Path, func(w http.ResponseWriter, r *http.Request) {
+		parts := strings.Split(route.Data, " ")
+		cmd := exec.Command(parts[0], parts[1:]...)
+		log.Printf("executing `%v` command\n", parts)
+
+		cmd.Stdout = w
+		cmd.Stderr = w
+		cmd.Run()
+	})
+}
+
 func SetRedirectHandler(mux *http.ServeMux, route Route) {
 	mux.HandleFunc(route.Path, func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, route.Data, http.StatusSeeOther)
@@ -244,6 +256,8 @@ func main() {
 			SetDirHandler(mux, route)
 		} else if IsRedirect(route) {
 			SetRedirectHandler(mux, route)
+		} else if IsCmd(route) {
+			SetCmdHandler(mux, route)
 		}
 	}
 

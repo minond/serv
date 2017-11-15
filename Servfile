@@ -2,3 +2,4 @@
 /servies      git        https://github.com/minond/servies.git
 /static       dir        .
 /github       redirect   https://github.com/minond
+/ps           cmd        ps aux
