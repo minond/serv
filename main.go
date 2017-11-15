@@ -16,13 +16,8 @@ import (
 type routeType string
 
 type Route struct {
-	// Top-level url path this route should match to
 	Path string
-
-	// See `routeType`
 	Type routeType
-
-	// Information passed to prep function. Type of data depends on Route.Type
 	Data string
 }
 
@@ -124,14 +119,14 @@ func CheckoutGitRepo(repoUrl string) (string, error) {
 	}
 
 	log.Printf("mkdir %v\n", path)
-	err = os.MkdirAll(path, 0777)
+	err = os.MkdirAll(path, 0755)
 
 	if err != nil {
 		return "", err
 	}
 
 	cmd := exec.Command("git", "clone", repoUrl, path, "--depth=1")
-	cmd.Stdout = os.Stderr
+	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return path, cmd.Run()
 }
