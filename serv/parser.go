@@ -22,8 +22,21 @@ type Route struct {
 }
 
 const (
-	routeGit   routeType = "git"   // Wants a git url
-	routeProxy routeType = "proxy" // Wants url:port
+	routeCmd       routeType = "cmd"       // Wants a command string
+	routeDirectory routeType = "directory" // Warts direcotry
+	routeGit       routeType = "git"       // Wants a git url
+	routeProxy     routeType = "proxy"     // Wants url:port?
+	routeRedirect  routeType = "redirect"  // Wants url
+)
+
+var (
+	routeTypes = map[string]routeType{
+		"cmd":       routeCmd,
+		"directory": routeDirectory,
+		"git":       routeGit,
+		"proxy":     routeProxy,
+		"redirect":  routeRedirect,
+	}
 )
 
 func GetServfile() ([]byte, error) {
@@ -42,19 +55,21 @@ func ParseServfile(raw []byte) (routes []Route) {
 			continue
 		}
 
-		log.Printf("route match: `%v` using %v to %v\n", match[0][1], match[0][2], match[0][3])
+		rpath := match[0][1]
+		rdata := match[0][3]
+		rtype, valid := routeTypes[match[0][2]]
 
-		switch match[0][2] {
-		case "git":
-			routes = append(routes, Route{
-				Path: match[0][1],
-				Type: routeGit,
-				Data: match[0][3],
-			})
+		log.Printf("route match %v using %v to %v\n", rpath, rtype, rdata)
 
-		default:
+		if valid == false {
 			panic(fmt.Sprintf("unknown route type: %v", match[0][2]))
 		}
+
+		routes = append(routes, Route{
+			Path: rpath,
+			Type: rtype,
+			Data: rdata,
+		})
 	}
 
 	return routes
