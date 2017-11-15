@@ -1,4 +1,4 @@
-package server
+package serv
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ func ParseServfile(raw []byte) (routes []Route) {
 	regex := regexp.MustCompile(`^([^\s|.]+)\s+([^\s|.]+)\s+(.+)$`)
 
 	for _, line := range lines {
-		match := regex.FindAllStringSubmatch(line, -1)
+		match := regex.FindAllStringSubmatch(strings.TrimSpace(line), -1)
 
 		if len(match) != 1 || len(match[0]) != 4 {
 			log.Printf("ignoring configuration line: %v", line)
@@ -53,4 +53,12 @@ func ParseServfile(raw []byte) (routes []Route) {
 	}
 
 	return routes
+}
+
+func IsProxy(route Route) bool {
+	return route.Type == routeProxy
+}
+
+func IsGit(route Route) bool {
+	return route.Type == routeGit
 }
