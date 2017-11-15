@@ -39,6 +39,26 @@ var (
 	}
 )
 
+func IsCmd(route Route) bool {
+	return route.Type == routeCmd
+}
+
+func IsDirectory(route Route) bool {
+	return route.Type == routeDirectory
+}
+
+func IsGit(route Route) bool {
+	return route.Type == routeGit
+}
+
+func IsProxy(route Route) bool {
+	return route.Type == routeProxy
+}
+
+func IsRedirect(route Route) bool {
+	return route.Type == routeRedirect
+}
+
 func GetServfile() ([]byte, error) {
 	return ioutil.ReadFile("./Servfile")
 }
@@ -73,16 +93,4 @@ func ParseServfile(raw []byte) (routes []Route) {
 	}
 
 	return routes
-}
-
-func IsDirectory(route Route) bool {
-	return route.Type == routeDirectory
-}
-
-func IsProxy(route Route) bool {
-	return route.Type == routeProxy
-}
-
-func IsGit(route Route) bool {
-	return route.Type == routeGit
 }

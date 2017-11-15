@@ -30,15 +30,27 @@ func checkRouteParts(t *testing.T, route Route, expected Route) {
 	}
 }
 
+func TestCmdRouteTypeChecker(t *testing.T) {
+	route := Route{Type: routeCmd}
+
+	if IsCmd(route) == false {
+		t.Fatal("this should come back as a cmd route")
+	}
+}
+
+func TestDirectoryRouteTypeChecker(t *testing.T) {
+	route := Route{Type: routeDirectory}
+
+	if IsDirectory(route) == false {
+		t.Fatal("this should come back as a directory route")
+	}
+}
+
 func TestGitRouteTypeChecker(t *testing.T) {
 	route := Route{Type: routeGit}
 
 	if IsGit(route) == false {
 		t.Fatal("this should come back as a git route")
-	}
-
-	if IsProxy(route) == true {
-		t.Fatal("this should not come back as a proxy route")
 	}
 }
 
@@ -48,9 +60,13 @@ func TestProxyRouteTypeChecker(t *testing.T) {
 	if IsProxy(route) == false {
 		t.Fatal("this should come back as a proxy route")
 	}
+}
 
-	if IsGit(route) == true {
-		t.Fatal("this should not come back as a git route")
+func TestRedirectRouteTypeChecker(t *testing.T) {
+	route := Route{Type: routeRedirect}
+
+	if IsRedirect(route) == false {
+		t.Fatal("this should come back as a redirect route")
 	}
 }
 
@@ -100,5 +116,49 @@ func TestParsesMultipleLines(t *testing.T) {
 		Path: "/two",
 		Type: routeGit,
 		Data: "https://gh.com/path/to/repo-two.git",
+	})
+}
+
+func TestParsesAllTypes(t *testing.T) {
+	raw := `
+/one cmd who
+/two directory .
+/three git https://gh.com/path/to/repo.git
+/four proxy localhost:3001
+/five redirect http://google.com
+`
+
+	routes := ParseServfile([]byte(raw))
+
+	checkRouteCount(t, routes, 5)
+
+	checkRouteParts(t, routes[0], Route{
+		Path: "/one",
+		Type: routeCmd,
+		Data: "who",
+	})
+
+	checkRouteParts(t, routes[1], Route{
+		Path: "/two",
+		Type: routeDirectory,
+		Data: ".",
+	})
+
+	checkRouteParts(t, routes[2], Route{
+		Path: "/three",
+		Type: routeGit,
+		Data: "https://gh.com/path/to/repo.git",
+	})
+
+	checkRouteParts(t, routes[3], Route{
+		Path: "/four",
+		Type: routeProxy,
+		Data: "localhost:3001",
+	})
+
+	checkRouteParts(t, routes[4], Route{
+		Path: "/five",
+		Type: routeRedirect,
+		Data: "http://google.com",
 	})
 }
