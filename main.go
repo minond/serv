@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -74,7 +75,7 @@ func ParseServfile(raw []byte) (routes []Route) {
 		match := regex.FindAllStringSubmatch(strings.TrimSpace(line), -1)
 
 		if len(match) != 1 || len(match[0]) != 4 {
-			log.Printf("ignoring configuration line: %v", line)
+			log.Printf("ignoring configuration line: %v\n", line)
 			continue
 		}
 
@@ -165,6 +166,30 @@ func AssertDir(name string) {
 	}
 }
 
+func SetProxyHandler(mux *http.ServeMux, route Route) {
+	proxyUrl, err := url.Parse(route.Data)
+	proxyPath := proxyUrl.Path
+
+	if err != nil {
+		panic(fmt.Sprintf("error parting proxy url (%v): %v", route.Data, err))
+	}
+
+	proxy := func(w http.ResponseWriter, r *http.Request) {
+		oldPath := r.URL.Path
+		newPath := strings.Replace(oldPath, route.Path, "", 1)
+
+		r.URL = proxyUrl
+		r.URL.Path = proxyPath + newPath
+
+		log.Printf("making request to %v\n", r.URL)
+		handler := httputil.NewSingleHostReverseProxy(proxyUrl)
+		handler.ServeHTTP(w, r)
+	}
+
+	mux.HandleFunc(route.Path, proxy)
+	mux.HandleFunc(route.Path+"/", proxy)
+}
+
 func SetCmdHandler(mux *http.ServeMux, route Route) {
 	mux.HandleFunc(route.Path, func(w http.ResponseWriter, r *http.Request) {
 		parts := strings.Split(route.Data, " ")
@@ -192,7 +217,7 @@ func SetDirHandler(mux *http.ServeMux, route Route) {
 		}
 
 		loc := path.Join(route.Data, filePath)
-		log.Printf("serving %v from %v", r.URL.String(), loc)
+		log.Printf("serving %v from %v\n", r.URL.String(), loc)
 		http.ServeFile(w, r, loc)
 	}
 
@@ -219,7 +244,7 @@ func SetGitHandler(mux *http.ServeMux, route Route) {
 		}
 
 		loc := path.Join(rootPath, filePath)
-		log.Printf("serving %v from %v", r.URL.String(), loc)
+		log.Printf("serving %v from %v\n", r.URL.String(), loc)
 		http.ServeFile(w, r, loc)
 	}
 
@@ -246,7 +271,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	for _, route := range routes {
-		log.Printf("creating %v handler for %v", route.Type, route.Path)
+		log.Printf("creating %v handler for %v\n", route.Type, route.Path)
 
 		if IsGit(route) {
 			AssertGitRepo(route.Data)
@@ -258,6 +283,10 @@ func main() {
 			SetRedirectHandler(mux, route)
 		} else if IsCmd(route) {
 			SetCmdHandler(mux, route)
+		} else if IsProxy(route) {
+			SetProxyHandler(mux, route)
+		} else {
+			panic(fmt.Sprintf("invalid route type `%v` in %v\n", route.Type, route))
 		}
 	}
 
