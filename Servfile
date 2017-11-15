@@ -1,4 +1,4 @@
 /             git        https://github.com/minond/minond.github.io.git
 /servies      git        https://github.com/minond/servies.git
-/static       directory  .
+/static       dir        .
 /github       redirect   https://github.com/minond

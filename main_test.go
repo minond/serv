@@ -39,9 +39,9 @@ func TestCmdRouteTypeChecker(t *testing.T) {
 }
 
 func TestDirectoryRouteTypeChecker(t *testing.T) {
-	route := Route{Type: routeDirectory}
+	route := Route{Type: routeDir}
 
-	if IsDirectory(route) == false {
+	if IsDir(route) == false {
 		t.Fatal("this should come back as a directory route")
 	}
 }
@@ -122,7 +122,7 @@ func TestParsesMultipleLines(t *testing.T) {
 func TestParsesAllTypes(t *testing.T) {
 	raw := `
 /one cmd who
-/two directory .
+/two dir .
 /three git https://gh.com/path/to/repo.git
 /four proxy localhost:3001
 /five redirect http://google.com
@@ -140,7 +140,7 @@ func TestParsesAllTypes(t *testing.T) {
 
 	checkRouteParts(t, routes[1], Route{
 		Path: "/two",
-		Type: routeDirectory,
+		Type: routeDir,
 		Data: ".",
 	})
 

@@ -25,20 +25,20 @@ const (
 	indexFile = "index.html"
 	rootDir   = "repo"
 
-	routeCmd       routeType = "cmd"       // Wants a command string
-	routeDirectory routeType = "directory" // Warts direcotry
-	routeGit       routeType = "git"       // Wants a git url
-	routeProxy     routeType = "proxy"     // Wants url:port?
-	routeRedirect  routeType = "redirect"  // Wants url
+	routeCmd      routeType = "cmd"      // Wants a command string
+	routeDir      routeType = "dir"      // Wants a directory
+	routeGit      routeType = "git"      // Wants a git url
+	routeProxy    routeType = "proxy"    // Wants url:port?
+	routeRedirect routeType = "redirect" // Wants a url
 )
 
 var (
 	routeTypes = map[string]routeType{
-		"cmd":       routeCmd,
-		"directory": routeDirectory,
-		"git":       routeGit,
-		"proxy":     routeProxy,
-		"redirect":  routeRedirect,
+		"cmd":      routeCmd,
+		"dir":      routeDir,
+		"git":      routeGit,
+		"proxy":    routeProxy,
+		"redirect": routeRedirect,
 	}
 )
 
@@ -46,8 +46,8 @@ func IsCmd(route Route) bool {
 	return route.Type == routeCmd
 }
 
-func IsDirectory(route Route) bool {
-	return route.Type == routeDirectory
+func IsDir(route Route) bool {
+	return route.Type == routeDir
 }
 
 func IsGit(route Route) bool {
@@ -138,7 +138,7 @@ func LocalRepoExists(repoUrl string) (bool, error) {
 		return false, err
 	}
 
-	return DirectoryExists(path)
+	return DirExists(path)
 }
 
 func AssertGitRepo(repoUrl string) {
@@ -149,7 +149,7 @@ func AssertGitRepo(repoUrl string) {
 	}
 }
 
-func DirectoryExists(name string) (bool, error) {
+func DirExists(name string) (bool, error) {
 	_, err := os.Stat(name)
 
 	if err == nil {
@@ -159,8 +159,8 @@ func DirectoryExists(name string) (bool, error) {
 	return false, nil
 }
 
-func AssertDirectory(name string) {
-	if exists, _ := DirectoryExists(name); exists == false {
+func AssertDir(name string) {
+	if exists, _ := DirExists(name); exists == false {
 		panic(fmt.Sprintf("expecting %v directory which does not exists", name))
 	}
 }
@@ -171,7 +171,7 @@ func SetRedirectHandler(mux *http.ServeMux, route Route) {
 	})
 }
 
-func SetDirectoryHandler(mux *http.ServeMux, route Route) {
+func SetDirHandler(mux *http.ServeMux, route Route) {
 	serveFile := func(w http.ResponseWriter, r *http.Request) {
 		filePath := strings.Replace(r.URL.String(), route.Path, "", 1)
 
@@ -239,9 +239,9 @@ func main() {
 		if IsGit(route) {
 			AssertGitRepo(route.Data)
 			SetGitHandler(mux, route)
-		} else if IsDirectory(route) {
-			AssertDirectory(route.Data)
-			SetDirectoryHandler(mux, route)
+		} else if IsDir(route) {
+			AssertDir(route.Data)
+			SetDirHandler(mux, route)
 		} else if IsRedirect(route) {
 			SetRedirectHandler(mux, route)
 		}
