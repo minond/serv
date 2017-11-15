@@ -75,6 +75,10 @@ func ParseServfile(raw []byte) (routes []Route) {
 	return routes
 }
 
+func IsDirectory(route Route) bool {
+	return route.Type == routeDirectory
+}
+
 func IsProxy(route Route) bool {
 	return route.Type == routeProxy
 }

@@ -28,6 +28,8 @@ func main() {
 				}
 			}
 
+			serv.SetGitHandler(mux, route)
+		} else if serv.IsDirectory(route) {
 			serv.SetDirectoryHandler(mux, route)
 		}
 	}

@@ -1,4 +1,5 @@
-/            git https://github.com/minond/minond.github.io.git
-/servies     git https://github.com/minond/servies.git
-/brainfuck   git https://github.com/minond/brainfuck.git
-/brainloller git https://github.com/minond/brainloller.git
+/             git        https://github.com/minond/minond.github.io.git
+/servies      git        https://github.com/minond/servies.git
+/brainfuck    git        https://github.com/minond/brainfuck.git
+/brainloller  git        https://github.com/minond/brainloller.git
+/static       directory  .
