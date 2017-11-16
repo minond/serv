@@ -209,7 +209,7 @@ func SetRedirectHandler(mux *http.ServeMux, route Route) {
 
 func SetDirHandler(mux *http.ServeMux, route Route) {
 	serveFile := func(w http.ResponseWriter, r *http.Request) {
-		filePath := strings.Replace(r.URL.String(), route.Path, "", 1)
+		filePath := strings.Replace(r.URL.Path, route.Path, "", 1)
 
 		if filePath == "" {
 			filePath = indexFile
