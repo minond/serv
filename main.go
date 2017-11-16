@@ -139,7 +139,7 @@ func LocalRepoExists(repoURL string) (bool, error) {
 		return false, err
 	}
 
-	return DirExists(path)
+	return FileExists(path)
 }
 
 func AssertGitRepo(repoURL string) {
@@ -150,7 +150,7 @@ func AssertGitRepo(repoURL string) {
 	}
 }
 
-func DirExists(name string) (bool, error) {
+func FileExists(name string) (bool, error) {
 	_, err := os.Stat(name)
 
 	if err == nil {
@@ -161,7 +161,7 @@ func DirExists(name string) (bool, error) {
 }
 
 func AssertDir(name string) {
-	if exists, _ := DirExists(name); exists == false {
+	if exists, _ := FileExists(name); exists == false {
 		panic(fmt.Sprintf("expecting %v directory which does not exists", name))
 	}
 }
@@ -215,7 +215,7 @@ func SetDirHandler(mux *http.ServeMux, route Route) {
 			filePath = indexFile
 		}
 
-		loc := path.Join(route.Data, filePath)
+		loc := GuessFileInDir(filePath, route.Data)
 		log.Printf("serving %v from %v\n", r.URL.String(), loc)
 		http.ServeFile(w, r, loc)
 	}
@@ -234,28 +234,20 @@ func SetDirHandler(mux *http.ServeMux, route Route) {
 
 func SetGitHandler(mux *http.ServeMux, route Route) {
 	rootPath, _ := GetRepoPath(route.Data)
+	route.Data = rootPath
+	SetDirHandler(mux, route)
+}
 
-	serveFile := func(w http.ResponseWriter, r *http.Request) {
-		filePath := strings.Replace(r.URL.String(), route.Path, "", 1)
+func GuessFileInDir(file, dir string) string {
+	origPath := path.Join(dir, file)
+	htmlPath := origPath + ".html"
 
-		if filePath == "" {
-			filePath = indexFile
-		}
+	exists, _ := FileExists(htmlPath)
 
-		loc := path.Join(rootPath, filePath)
-		log.Printf("serving %v from %v\n", r.URL.String(), loc)
-		http.ServeFile(w, r, loc)
-	}
-
-	slashRedirect := func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, route.Path+"/", http.StatusSeeOther)
-	}
-
-	if route.Path == "/" {
-		mux.HandleFunc(route.Path, serveFile)
+	if exists == true {
+		return htmlPath
 	} else {
-		mux.HandleFunc(route.Path, slashRedirect)
-		mux.HandleFunc(route.Path+"/", serveFile)
+		return origPath
 	}
 }
 
