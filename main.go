@@ -44,6 +44,7 @@ var (
 	}
 
 	listen = flag.String("listen", ":3002", "Host and port to listen on.")
+	config = flag.String("config", "./Servfile", "Path to Servfile")
 )
 
 func IsCmd(route Route) bool {
@@ -64,10 +65,6 @@ func IsProxy(route Route) bool {
 
 func IsRedirect(route Route) bool {
 	return route.Type == routeRedirect
-}
-
-func GetServfile() ([]byte, error) {
-	return ioutil.ReadFile("./Servfile")
 }
 
 func ParseServfile(raw []byte) (routes []Route) {
@@ -255,13 +252,15 @@ func GuessFileInDir(file, dir string) string {
 }
 
 func main() {
-	servfile, err := GetServfile()
+	flag.Parse()
+
+	log.Printf("reading configuration from %v\n", *config)
+	servfile, err := ioutil.ReadFile(*config)
 
 	if err != nil {
 		panic(fmt.Sprintf("error reading Servfile: %v", err))
 	}
 
-	flag.Parse()
 	routes := ParseServfile(servfile)
 	mux := http.NewServeMux()
 
