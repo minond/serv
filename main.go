@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -41,6 +42,8 @@ var (
 		"proxy":    routeProxy,
 		"redirect": routeRedirect,
 	}
+
+	listen = flag.String("listen", ":3002", "Host and port to listen on.")
 )
 
 func IsCmd(route Route) bool {
@@ -258,6 +261,7 @@ func main() {
 		panic(fmt.Sprintf("error reading Servfile: %v", err))
 	}
 
+	flag.Parse()
 	routes := ParseServfile(servfile)
 	mux := http.NewServeMux()
 
@@ -287,6 +291,6 @@ func main() {
 		}
 	}
 
-	log.Println("starting server")
-	log.Fatal(http.ListenAndServe(":3002", mux))
+	log.Printf("starting server on %v\n", *listen)
+	log.Fatal(http.ListenAndServe(*listen, mux))
 }
