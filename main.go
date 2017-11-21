@@ -1,5 +1,7 @@
 package main
 
+// TODO poll git repos for updates
+// TODO domain checker???
 import (
 	"flag"
 	"fmt"
