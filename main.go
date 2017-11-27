@@ -1,6 +1,5 @@
 package main
 
-// TODO poll git repos for updates
 // TODO domain checker???
 import (
 	"flag"
@@ -15,6 +14,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type routeType string
@@ -45,8 +45,9 @@ var (
 		"redirect": routeRedirect,
 	}
 
-	listen = flag.String("listen", ":3002", "Host and port to listen on.")
-	config = flag.String("config", "./Servfile", "Path to Servfile")
+	listen       = flag.String("listen", ":3002", "Host and port to listen on.")
+	config       = flag.String("config", "./Servfile", "Path to Servfile file.")
+	pullInterval = flag.Duration("pullInterval", 15*time.Minute, "Interval git repos are pulled at.")
 )
 
 func IsCmd(route Route) bool {
@@ -111,6 +112,33 @@ func GetRepoPath(repoURL string) (string, error) {
 	}
 
 	return path.Join(rootDir, ur.Hostname(), ur.EscapedPath()), nil
+}
+
+func PullGitRepoInterval(repoURL string) {
+	log.Printf("pulling %v every %v\n", repoURL, *pullInterval)
+	for {
+		time.Sleep(*pullInterval)
+		PullGitRepo(repoURL)
+	}
+}
+
+func PullGitRepo(repoURL string) {
+	path, err := GetRepoPath(repoURL)
+
+	if found, _ := FileExists(path); !found {
+		return
+	}
+
+	log.Printf("running git pull on %v\n", path)
+
+	cmd := exec.Command("git", "pull")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Dir = path
+
+	if err = cmd.Run(); err != nil {
+		log.Printf("error running git pull on %v: %v\n", path, err)
+	}
 }
 
 // Clones repo into local folder
@@ -273,6 +301,7 @@ func main() {
 		case IsGit(route):
 			AssertGitRepo(route.Data)
 			SetGitHandler(mux, route)
+			go PullGitRepoInterval(route.Data)
 
 		case IsDir(route):
 			AssertDir(route.Data)
