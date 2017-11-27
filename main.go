@@ -245,8 +245,6 @@ func SetDirHandler(mux *http.ServeMux, route Route) {
 			filePath = indexFile
 		}
 
-		log.Printf("%s\n", r.Host)
-
 		loc := GuessFileInDir(filePath, route.Data)
 		log.Printf("serving %v from %v\n", r.URL.String(), loc)
 		http.ServeFile(w, r, loc)
@@ -281,10 +279,6 @@ func GuessFileInDir(file, dir string) string {
 	} else {
 		return origPath
 	}
-}
-
-func GetCleanHost(host string) string {
-	return strings.Split(host, ":")[0]
 }
 
 func main() {
