@@ -18,4 +18,14 @@ example:
 
 With this configuration, serv will checkout all repositories and serve them
 along with serving or proxying anything else you tell it to. Run `serv` in a
-directory with your `Servfile` and you're done.
+directory with your `Servfile` and you're done. Additional options are:
+
+```bash
+Usage of serv:
+  -config string
+        Path to Servfile file. (default "./Servfile")
+  -listen string
+        Host and port to listen on. (default ":3002")
+  -pullInterval duration
+        Interval git repos are pulled at. (default 15m0s)
+```
