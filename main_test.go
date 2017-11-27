@@ -173,3 +173,19 @@ func TestRepoPathGenerator(t *testing.T) {
 		t.Fatal("generated invalid path")
 	}
 }
+
+func TestHostCleanerFunction(t *testing.T) {
+	var perms = []struct{ raw, clean string }{
+		{"testing:80", "testing"},
+		{"www.testing:80", "www.testing"},
+		{"www.testing", "www.testing"},
+		{"localhost:3432", "localhost"},
+		{"localhost", "localhost"},
+	}
+
+	for _, perm := range perms {
+		if ret := GetCleanHost(perm.raw); ret != perm.clean {
+			t.Fatalf("expected %v but got %v\n", perm.clean, ret)
+		}
+	}
+}
