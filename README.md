@@ -1,10 +1,10 @@
 # Serv
 
-A little server that easily lets you serve git repositories, static files,
-redirects, execute commands, and create reverse proxies. Once installed (`go
-install github.com/minond/serv`), create a `Servfile` file that is made up of a
-path, handler type, and any information needed to create the handler. For
-example:
+A server that easily lets you serve over HTTPS, clone and serve git
+repositories, static files, setup redirects, execute commands, and create
+reverse proxies. Once installed (`go install github.com/minond/serv`), create a
+`Servfile` file that is made up of a path, handler type, and any information
+needed to create the handler. For example:
 
 ```
 # Path        Type       Endpoint information
@@ -22,11 +22,12 @@ along with serving or proxying anything else you tell it to. Run `serv` in a
 directory with your `Servfile` and you're done. Additional options are:
 
 ```bash
-Usage of serv:
-  -config string
-        Path to Servfile file. (default "./Servfile")
-  -listen string
-        Host and port to listen on. (default ":3002")
-  -pullInterval duration
-        Interval git repos are pulled at. (default 15m0s)
+-config string
+      Path to Servfile file. (default "./Servfile")
+-listen string
+      Host and port to listen on. (default ":3002")
+-listenHttps string
+      Path to Let's Encript cache file instead of host/port.
+-pullInterval duration
+      Interval git repos are pulled at. (default 15m0s)
 ```
