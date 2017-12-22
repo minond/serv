@@ -1,6 +1,7 @@
 package main
 
 // TODO domain checker???
+// TODO 404 handler
 import (
 	"flag"
 	"fmt"
