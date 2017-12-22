@@ -16,6 +16,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"rsc.io/letsencrypt"
 )
 
 type routeType string
@@ -47,6 +49,7 @@ var (
 	}
 
 	listen       = flag.String("listen", ":3002", "Host and port to listen on.")
+	listenHttps  = flag.String("listenHttps", "", "Path to Let's Encript cache file instead of host/port.")
 	config       = flag.String("config", "./Servfile", "Path to Servfile file.")
 	pullInterval = flag.Duration("pullInterval", 15*time.Minute, "Interval git repos are pulled at.")
 )
@@ -322,6 +325,24 @@ func main() {
 		}
 	}
 
-	log.Printf("starting server on %v\n", *listen)
-	log.Fatal(http.ListenAndServe(*listen, mux))
+	if *listenHttps != "" {
+		log.Printf("starting https server on %v\n", *listen)
+
+		var m letsencrypt.Manager
+
+		if err := m.CacheFile(*listenHttps); err != nil {
+			log.Fatal(err)
+		}
+
+		// Because of this:
+		// > Serve runs an HTTP/HTTPS web server using TLS certificates
+		// > obtained by the manager. The HTTP server redirects all requests to
+		// > the HTTPS server. The HTTPS server obtains TLS certificates as
+		// > needed and responds to requests by invoking http.DefaultServeMux.
+		http.DefaultServeMux = mux
+		log.Fatal(m.Serve())
+	} else {
+		log.Printf("starting http server on %v\n", *listen)
+		log.Fatal(http.ListenAndServe(*listen, mux))
+	}
 }
