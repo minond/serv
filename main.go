@@ -1,7 +1,6 @@
 package main
 
 // TODO domain checker???
-// TODO 404 handler
 import (
 	"flag"
 	"fmt"
@@ -278,14 +277,20 @@ func SetGitHandler(mux *http.ServeMux, route Route) {
 	SetDirHandler(mux, route)
 }
 
+// NOTE This does have an issue in that if no local 404 file is found we should
+// fallback to /404.html, but we don't since this function (or the handler)
+// doesn't know about other routes and which one is on the / endpoint.
 func GuessFileInDir(file, dir string) string {
 	origPath := path.Join(dir, file)
 	htmlPath := origPath + ".html"
+	local404Path := path.Join(dir, "404.html")
 
-	exists, _ := FileExists(htmlPath)
-
-	if exists == true {
+	if exists, _ := FileExists(htmlPath); exists == true {
 		return htmlPath
+	} else if exists, _ := FileExists(origPath); exists == true {
+		return origPath
+	} else if exists, _ := FileExists(local404Path); exists == true {
+		return local404Path
 	} else {
 		return origPath
 	}
