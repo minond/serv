@@ -31,3 +31,13 @@ directory with your `Servfile` and you're done. Additional options are:
 -pullInterval duration
       Interval git repos are pulled at. (default 15m0s)
 ```
+
+### Listening on privileged ports
+
+Instead of running server as root (in order to bind to a privileged port, like
+80 and 443) one could give the `serv` binary permission to bind to those ports
+using the [`setcap`](https://linux.die.net/man/8/setcap) command:
+
+```bash
+sudo setcap 'cap_net_bind_service=+ep' $(which serv)
+```
