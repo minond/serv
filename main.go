@@ -80,11 +80,12 @@ func ParseServfile(raw []byte) (routes []Route) {
 
 	for _, line := range lines {
 		clean := strings.TrimSpace(line)
-		match := regex.FindAllStringSubmatch(clean, -1)
 
-		if clean[0] == byte('#') {
+		if clean == "" || clean[0] == byte('#') {
 			continue
 		}
+
+		match := regex.FindAllStringSubmatch(clean, -1)
 
 		if len(match) != 1 || len(match[0]) != 4 {
 			log.Printf("ignoring configuration line: %v\n", line)
