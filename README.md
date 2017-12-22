@@ -7,6 +7,7 @@ path, handler type, and any information needed to create the handler. For
 example:
 
 ```
+# Path        Type       Endpoint information
 /             git        https://github.com/minond/minond.github.io.git
 /servies      git        https://github.com/minond/servies.git
 /static       dir        .
