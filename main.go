@@ -48,7 +48,7 @@ var (
 	}
 
 	listen       = flag.String("listen", ":3002", "Host and port to listen on.")
-	listenHttps  = flag.String("listenHttps", "", "Path to Let's Encript cache file instead of host/port.")
+	listenHttps  = flag.String("listenHttps", "", "Path to Let's Encrypt cache file instead of host/port.")
 	config       = flag.String("config", "./Servfile", "Path to Servfile file.")
 	pullInterval = flag.Duration("pullInterval", 15*time.Minute, "Interval git repos are pulled at.")
 )
