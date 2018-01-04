@@ -27,7 +27,7 @@ directory with your `Servfile` and you're done. Additional options are:
 -listen string
       Host and port to listen on. (default ":3002")
 -listenHttps string
-      Path to Let's Encript cache file instead of host/port.
+      Path to Let's Encrypt cache file instead of host/port.
 -pullInterval duration
       Interval git repos are pulled at. (default 15m0s)
 ```
