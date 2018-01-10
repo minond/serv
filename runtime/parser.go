@@ -22,7 +22,7 @@ package runtime
  *       path /servies := git(https://github.com/minond/servies.git)
  *       path /static  := dir(.)
  *       path /github  := redirect(https://github.com/minond)
- *       path /ps      := cmd(ps aux)
+ *       path /ps      := cmd(ps, aux)
  *       path /imdb    := proxy(http://www.imdb.com:80)
  *       path /unibrow := proxy(http://localhost:3001)
  *
@@ -32,7 +32,7 @@ var ast = []Case{
 	Case{
 		expr: Expr{
 			kind:  call,
-			value: Token{kind: caseToken, lexeme: "case"},
+			value: Token{kind: caseToken, lexeme: "Host"},
 			args: []Token{
 				Token{kind: identifierToken, lexeme: "_"},
 				Token{kind: identifierToken, lexeme: "_"},
