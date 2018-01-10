@@ -31,7 +31,7 @@ package runtime
  *
  *     var ast = []Case{
  *       Case{
- *     	   expr: Expr{
+ *         expr: Expr{
  *           kind:  call,
  *           value: Token{kind: caseToken, lexeme: "Host"},
  *           args: []Token{
