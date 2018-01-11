@@ -2,14 +2,21 @@ package runtime
 
 import "fmt"
 
+type parser struct {
+	pos    int
+	tokens []Token
+}
+
+var eof = tok(eofToken, "<eof>")
+
 /**
  * Servfile configuration parser
  *
  * Grammar:
  *
- *     MAIN            = case* EOF ;
+ *     MAIN            = match* EOF ;
  *
- *     case            = "case" expression "=>" declaration* ;
+ *     match           = "case" expression "=>" declaration* ;
  *
  *     declaration     = "path" IDENTIFIER ":=" expression ;
  *
@@ -33,11 +40,11 @@ import "fmt"
  *
  * Sample ast output:
  *
- *     var ast = []Case{
- *       Case{
+ *     var ast = []Match{
+ *       Match{
  *         expr: Expr{
  *           kind:  call,
- *           value: Token{kind: caseToken, lexeme: "Host"},
+ *           value: Token{kind: identifierToken, lexeme: "Host"},
  *           args: []Token{
  *             Token{kind: identifierToken, lexeme: "_"},
  *             Token{kind: identifierToken, lexeme: "_"},
@@ -95,14 +102,145 @@ import "fmt"
  *     }
  *
  */
-func Parse(raw string) []Case {
-	tokens := tokenize(raw)
-
-	for _, t := range tokens {
-		fmt.Println(t)
+func Parse(raw string) []Match {
+	p := parser{
+		pos:    0,
+		tokens: tokenize(raw),
 	}
 
-	return []Case{}
+	var matches []Match
+
+	for !p.done() {
+		matches = append(matches, p.match())
+	}
+
+	return matches
+}
+
+func (p *parser) match() Match {
+	if p.eat().lexeme != "case" {
+		panic(fmt.Sprintf("Expecting `case` but found %s instead.",
+			p.prev().lexeme))
+	}
+
+	mat := Match{}
+	mat.expr = p.expression()
+
+	if !p.matches(blockOpenToken) {
+		panic(fmt.Sprintf("Expecting `=>` but found %s instead.",
+			p.peek().lexeme))
+	}
+
+	for !p.done() {
+		mat.dcls = append(mat.dcls, p.declaration())
+
+		if p.peek().lexeme == "case" {
+			break
+		}
+	}
+
+	return mat
+}
+
+func (p *parser) declaration() Declaration {
+	decl := Declaration{}
+
+	switch p.eat().lexeme {
+	case "path":
+		decl.kind = path
+
+	default:
+		panic(fmt.Sprintf("Invalid declaration type: %s",
+			p.prev().lexeme))
+	}
+
+	if p.matches(identifierToken) {
+		decl.key = p.prev()
+	} else {
+		panic(fmt.Sprintf("Expecting an identifier but found %s instead",
+			p.peek().kind))
+	}
+
+	if p.matches(defEqToken) {
+		decl.value = p.expression()
+	} else {
+		panic(fmt.Sprintf("Expecting `:=` but found %s instead",
+			p.peek().kind))
+	}
+
+	return decl
+}
+
+func (p *parser) expression() Expr {
+	expr := Expr{
+		kind:  expr,
+		value: p.eat(),
+	}
+
+	if p.matches(openParToken) {
+		var args []Token
+		expr.kind = call
+
+	arg:
+		if p.matches(closeParToken) {
+			return expr
+		}
+
+		if p.matches(identifierToken) {
+			args = append(args, p.prev())
+			expr.args = args
+		} else {
+			panic(fmt.Sprintf("Expecting an identifier but found %s",
+				p.peek().kind))
+		}
+
+		if p.matches(commaToken) {
+			goto arg
+		} else if !p.matches(closeParToken) {
+			panic(fmt.Sprintf("Expecting a closing paren but found %s",
+				p.peek().kind))
+		}
+	}
+
+	return expr
+}
+
+func (p *parser) matches(kinds ...tokenKind) bool {
+	for _, kind := range kinds {
+		if p.peek().kind == kind {
+			p.eat()
+			return true
+		}
+	}
+
+	return false
+}
+
+func (p *parser) eat() Token {
+	if p.done() {
+		return eof
+	} else {
+		tok := p.peek()
+		p.pos += 1
+		return tok
+	}
+}
+
+func (p parser) prev() Token {
+	return p.tokens[p.pos-1]
+}
+
+func (p parser) peek() Token {
+	if p.done() {
+		return eof
+	} else {
+		return p.tokens[p.pos]
+	}
+}
+
+func (p parser) done() bool {
+	return p.pos >= len(p.tokens) ||
+		p.tokens[p.pos].kind == eofToken
 }
 
 func tokenize(raw string) []Token {
@@ -162,7 +300,7 @@ func tok(kind tokenKind, lexeme string) Token {
 
 func next(pos int, letters []rune) Token {
 	if pos+1 > len(letters) {
-		return tok(eofToken, "")
+		return eof
 	} else {
 		return tok(identifierToken, string(letters[pos+1]))
 	}

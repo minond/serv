@@ -9,7 +9,7 @@ type tokenKind string
 type exprKind string
 type declKind string
 
-type Case struct {
+type Match struct {
 	expr Expr
 	dcls []Declaration
 }
@@ -32,8 +32,9 @@ type Token struct {
 }
 
 const (
-	caseToken       tokenKind = "casetok"   // "case"
-	defPathToken    tokenKind = "defptok"   // "path"
+	// XXX use these
+	// caseToken       tokenKind = "casetok"   // "case"
+	// defPathToken    tokenKind = "defptok"   // "path"
 	blockOpenToken  tokenKind = "blockotok" // "=>"
 	defEqToken      tokenKind = "defeqtok"  // ":="
 	openParToken    tokenKind = "opartok"   // "("
@@ -48,14 +49,14 @@ const (
 	path declKind = "path"
 )
 
-func (c Case) String() string {
+func (m Match) String() string {
 	var dcls []string
 
-	for _, decl := range c.dcls {
+	for _, decl := range m.dcls {
 		dcls = append(dcls, fmt.Sprintf("  %s\n", decl))
 	}
 
-	return fmt.Sprintf("case %s =>\n%s", c.expr, strings.Join(dcls, ""))
+	return fmt.Sprintf("case %s =>\n%s", m.expr, strings.Join(dcls, ""))
 }
 
 func (d Declaration) String() string {
@@ -80,7 +81,7 @@ func (e Expr) String() string {
 		return fmt.Sprintf("%s(%s)", e.value.lexeme, strings.Join(args, ", "))
 
 	case expr:
-		return fmt.Sprintf("%s", e.value)
+		return fmt.Sprintf("%s", e.value.lexeme)
 
 	default:
 		return "<Invalid Expression>"
