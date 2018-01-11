@@ -32,15 +32,12 @@ type Token struct {
 }
 
 const (
-	// XXX use these
-	// caseToken       tokenKind = "casetok"   // "case"
-	// defPathToken    tokenKind = "defptok"   // "path"
 	blockOpenToken  tokenKind = "blockotok" // "=>"
 	defEqToken      tokenKind = "defeqtok"  // ":="
 	openParToken    tokenKind = "opartok"   // "("
 	closeParToken   tokenKind = "cpartok"   // ")"
 	commaToken      tokenKind = "commatok"  // ","
-	identifierToken tokenKind = "idtok"     // [^\s]+
+	identifierToken tokenKind = "idtok"     // [^\s,()]+
 	eofToken        tokenKind = "eoftok"    // EOF
 
 	call exprKind = "call"
