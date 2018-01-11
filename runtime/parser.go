@@ -1,5 +1,7 @@
 package runtime
 
+import "fmt"
+
 /**
  * Servfile configuration parser
  *
@@ -12,7 +14,9 @@ package runtime
  *     declaration     = "path" IDENTIFIER ":=" expression ;
  *
  *     expression      = IDENTIFIER
- *                     | IDENTIFIER "(" [IDENTIFIER]* ")" ;
+ *                     | IDENTIFIER "(" [IDENTIFIER ["," IDENTIFIER]*] ")" ;
+ *
+ *     IDENTIFIER      = [^\s]+
  *
  *
  * Sample raw input:
@@ -92,5 +96,108 @@ package runtime
  *
  */
 func Parse(raw string) []Case {
+	for _, t := range Tokenizer(raw) {
+		fmt.Println(t)
+	}
+
 	return []Case{}
+}
+
+func Tokenizer(raw string) []Token {
+	var tokens []Token
+	letters := []rune(raw)
+
+	for pos := 0; pos < len(letters); pos++ {
+		switch letters[pos] {
+		case rune(','):
+			tokens = append(tokens, Token{kind: commaToken, lexeme: ","})
+			continue
+
+		case rune('('):
+			tokens = append(tokens, Token{kind: openParToken, lexeme: "("})
+			continue
+
+		case rune(')'):
+			tokens = append(tokens, Token{kind: closeParToken, lexeme: ")"})
+			continue
+
+		case rune(':'):
+			if next(pos, letters).lexeme == "=" {
+				tokens = append(tokens, Token{kind: defEqToken, lexeme: ":="})
+				pos += 1
+			} else {
+				w := word(pos, letters)
+				pos += len(w) - 1
+				tokens = append(tokens, Token{kind: identifierToken, lexeme: w})
+			}
+			break
+
+		case rune('='):
+			if next(pos, letters).lexeme == ">" {
+				tokens = append(tokens, Token{kind: blockOpenToken, lexeme: "=>"})
+				pos += 1
+			} else {
+				w := word(pos, letters)
+				pos += len(w) - 1
+				tokens = append(tokens, Token{kind: identifierToken, lexeme: w})
+			}
+			break
+
+		case rune(' '):
+			fallthrough
+		case rune('\t'):
+			fallthrough
+		case rune('\n'):
+			fallthrough
+		case rune('\r'):
+			break
+
+		default:
+			w := word(pos, letters)
+			pos += len(w) - 1
+			tokens = append(tokens, Token{kind: identifierToken, lexeme: w})
+			break
+		}
+	}
+
+	return tokens
+}
+
+func next(pos int, letters []rune) Token {
+	if pos+1 > len(letters) {
+		return Token{kind: eofToken}
+	} else {
+		return Token{
+			kind:   identifierToken,
+			lexeme: string(letters[pos+1]),
+		}
+	}
+}
+
+func word(pos int, letters []rune) string {
+	buff := ""
+
+	for ; pos < len(letters); pos++ {
+		switch letters[pos] {
+		case rune('('):
+			fallthrough
+		case rune(')'):
+			fallthrough
+		case rune(','):
+			fallthrough
+		case rune(' '):
+			fallthrough
+		case rune('\t'):
+			fallthrough
+		case rune('\n'):
+			fallthrough
+		case rune('\r'):
+			return buff
+
+		default:
+			buff += string(letters[pos])
+		}
+	}
+
+	return buff
 }

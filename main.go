@@ -4,7 +4,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -16,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"rsc.io/letsencrypt"
+	"github.com/minond/serv/runtime"
 )
 
 type routeType string
@@ -299,61 +298,72 @@ func GuessFileInDir(file, dir string) string {
 func main() {
 	flag.Parse()
 
-	log.Printf("reading configuration from %v\n", *config)
-	servfile, err := ioutil.ReadFile(*config)
+	fmt.Println(runtime.Parse(`case Host(_, _, _) =>
+	path /        := git(https://github.com/minond/minond.github.io.git)
+	path /servies := git(https://github.com/minond/servies.git)
+	path /static  := dir(.)
+	path /github  := redirect(https://github.com/minond)
+	path /ps      := cmd(ps, aux)
+	path /imdb    := proxy(http://www.imdb.com:80)
+	path /unibrow := proxy(http://localhost:3001)`))
 
-	if err != nil {
-		panic(fmt.Sprintf("error reading Servfile: %v", err))
-	}
+	// fmt.Println(runtime.Parse(`hi()`))
 
-	routes := ParseServfile(servfile)
-	mux := http.NewServeMux()
-
-	for _, route := range routes {
-		log.Printf("creating %v handler for %v\n", route.Type, route.Path)
-
-		switch {
-		case IsGit(route):
-			AssertGitRepo(route.Data)
-			SetGitHandler(mux, route)
-			go PullGitRepoInterval(route.Data)
-
-		case IsDir(route):
-			AssertDir(route.Data)
-			SetDirHandler(mux, route)
-
-		case IsRedirect(route):
-			SetRedirectHandler(mux, route)
-
-		case IsCmd(route):
-			SetCmdHandler(mux, route)
-
-		case IsProxy(route):
-			SetProxyHandler(mux, route)
-
-		default:
-			panic(fmt.Sprintf("invalid route type `%v` in %v\n", route.Type, route))
-		}
-	}
-
-	if *listenHttps != "" {
-		log.Printf("starting https server on %v\n", *listen)
-
-		var m letsencrypt.Manager
-
-		if err := m.CacheFile(*listenHttps); err != nil {
-			log.Fatal(err)
-		}
-
-		// Because of this:
-		// > Serve runs an HTTP/HTTPS web server using TLS certificates
-		// > obtained by the manager. The HTTP server redirects all requests to
-		// > the HTTPS server. The HTTPS server obtains TLS certificates as
-		// > needed and responds to requests by invoking http.DefaultServeMux.
-		http.DefaultServeMux = mux
-		log.Fatal(m.Serve())
-	} else {
-		log.Printf("starting http server on %v\n", *listen)
-		log.Fatal(http.ListenAndServe(*listen, mux))
-	}
+	// log.Printf("reading configuration from %v\n", *config)
+	// servfile, err := ioutil.ReadFile(*config)
+	//
+	// if err != nil {
+	// 	panic(fmt.Sprintf("error reading Servfile: %v", err))
+	// }
+	//
+	// routes := ParseServfile(servfile)
+	// mux := http.NewServeMux()
+	//
+	// for _, route := range routes {
+	// 	log.Printf("creating %v handler for %v\n", route.Type, route.Path)
+	//
+	// 	switch {
+	// 	case IsGit(route):
+	// 		AssertGitRepo(route.Data)
+	// 		SetGitHandler(mux, route)
+	// 		go PullGitRepoInterval(route.Data)
+	//
+	// 	case IsDir(route):
+	// 		AssertDir(route.Data)
+	// 		SetDirHandler(mux, route)
+	//
+	// 	case IsRedirect(route):
+	// 		SetRedirectHandler(mux, route)
+	//
+	// 	case IsCmd(route):
+	// 		SetCmdHandler(mux, route)
+	//
+	// 	case IsProxy(route):
+	// 		SetProxyHandler(mux, route)
+	//
+	// 	default:
+	// 		panic(fmt.Sprintf("invalid route type `%v` in %v\n", route.Type, route))
+	// 	}
+	// }
+	//
+	// if *listenHttps != "" {
+	// 	log.Printf("starting https server on %v\n", *listen)
+	//
+	// 	var m letsencrypt.Manager
+	//
+	// 	if err := m.CacheFile(*listenHttps); err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	//
+	// 	// Because of this:
+	// 	// > Serve runs an HTTP/HTTPS web server using TLS certificates
+	// 	// > obtained by the manager. The HTTP server redirects all requests to
+	// 	// > the HTTPS server. The HTTPS server obtains TLS certificates as
+	// 	// > needed and responds to requests by invoking http.DefaultServeMux.
+	// 	http.DefaultServeMux = mux
+	// 	log.Fatal(m.Serve())
+	// } else {
+	// 	log.Printf("starting http server on %v\n", *listen)
+	// 	log.Fatal(http.ListenAndServe(*listen, mux))
+	// }
 }

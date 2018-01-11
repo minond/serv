@@ -32,11 +32,15 @@ type Token struct {
 }
 
 const (
-	caseToken       tokenKind = "casetok"
-	blockOpenToken  tokenKind = "blockotok"
-	identifierToken tokenKind = "idtok"
-	defPathToken    tokenKind = "defptok"
-	defEqToken      tokenKind = "defeqtok"
+	caseToken       tokenKind = "casetok"   // "case"
+	defPathToken    tokenKind = "defptok"   // "path"
+	blockOpenToken  tokenKind = "blockotok" // "=>"
+	defEqToken      tokenKind = "defeqtok"  // ":="
+	openParToken    tokenKind = "opartok"   // "("
+	closeParToken   tokenKind = "cpartok"   // ")"
+	commaToken      tokenKind = "commatok"  // ","
+	identifierToken tokenKind = "idtok"     // [^\s]+
+	eofToken        tokenKind = "eoftok"    // EOF
 
 	call exprKind = "call"
 	expr exprKind = "expr"
@@ -57,7 +61,7 @@ func (c Case) String() string {
 func (d Declaration) String() string {
 	switch d.kind {
 	case path:
-		return fmt.Sprintf("path %s := %s", d.key, d.value)
+		return fmt.Sprintf("path %s := %s", d.key.lexeme, d.value)
 
 	default:
 		return "<Invalid Declaration>"
@@ -70,10 +74,10 @@ func (e Expr) String() string {
 		var args []string
 
 		for _, arg := range e.args {
-			args = append(args, fmt.Sprintf("%s", arg))
+			args = append(args, fmt.Sprintf("%s", arg.lexeme))
 		}
 
-		return fmt.Sprintf("%s(%s)", e.value, strings.Join(args, ", "))
+		return fmt.Sprintf("%s(%s)", e.value.lexeme, strings.Join(args, ", "))
 
 	case expr:
 		return fmt.Sprintf("%s", e.value)
@@ -81,8 +85,4 @@ func (e Expr) String() string {
 	default:
 		return "<Invalid Expression>"
 	}
-}
-
-func (t Token) String() string {
-	return t.lexeme
 }
