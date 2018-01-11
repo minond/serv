@@ -1,6 +1,9 @@
 package parser
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type parser struct {
 	pos    int
@@ -12,7 +15,7 @@ var eof = tok(eofToken, "<eof>")
 func Parse(raw string) []Match {
 	p := parser{
 		pos:    0,
-		tokens: tokenize(raw),
+		tokens: tokenize(preprocessor(raw)),
 	}
 
 	var matches []Match
@@ -142,6 +145,31 @@ func (p parser) peek() Token {
 func (p parser) done() bool {
 	return p.pos >= len(p.tokens) ||
 		p.tokens[p.pos].kind == eofToken
+}
+
+// In charge of prepping raw text for the tokenizer. Right now this just means
+// removing comments but if we wanted to add macros, they could be handled
+// here.
+func preprocessor(raw string) string {
+	var processed []string
+
+	startsWith := func(prefix, str string) bool {
+		if len(str) == 0 {
+			return false
+		} else {
+			return strings.HasPrefix(strings.TrimSpace(str), prefix)
+		}
+	}
+
+	for _, line := range strings.Split(raw, "\n") {
+		if startsWith("#", line) {
+			continue
+		}
+
+		processed = append(processed, line)
+	}
+
+	return strings.Join(processed, "\n")
 }
 
 func tokenize(raw string) []Token {

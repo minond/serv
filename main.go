@@ -305,7 +305,8 @@ case Host(dearme, minond, _) =>
 case Host(_, minond, co) =>
   path / redirect(https://minond.xyz)
 
-case DateTime(_, _, _, 12, _, 15) =>
+# Don't allow anything at midnight
+case DateTime(_, _, _, 0, 0, 0) =>
   path / pass(500)
 
 case Host(_, minond, _) =>
