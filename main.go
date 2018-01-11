@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/minond/serv/parser"
+	"github.com/minond/serv/serv"
 )
 
 type routeType string
@@ -298,7 +298,7 @@ func GuessFileInDir(file, dir string) string {
 func main() {
 	flag.Parse()
 
-	fmt.Println(parser.Parse(`
+	fmt.Println(serv.Parse(`
 case Host(dearme, minond, _) =>
   path / proxy(http://localhost:3002)
 
@@ -320,7 +320,7 @@ case Host(_, minond, _) =>
 
 `))
 
-	// fmt.Println(parser.Parse(`hi(1, 2, 3, 213) := xyz(x => x * 3)`))
+	// fmt.Println(serv.Parse(`hi(1, 2, 3, 213) := xyz(x => x * 3)`))
 
 	// log.Printf("reading configuration from %v\n", *config)
 	// servfile, err := ioutil.ReadFile(*config)
