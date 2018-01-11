@@ -18,7 +18,7 @@ var eof = tok(eofToken, "<eof>")
  *
  *     match           = "case" expression "=>" declaration* ;
  *
- *     declaration     = "path" IDENTIFIER ":=" expression ;
+ *     declaration     = "path" IDENTIFIER expression ;
  *
  *     expression      = IDENTIFIER
  *                     | IDENTIFIER "(" [IDENTIFIER ["," IDENTIFIER]*] ")" ;
@@ -29,13 +29,13 @@ var eof = tok(eofToken, "<eof>")
  * Sample raw input:
  *
  *     case Host(_, _, _) =>
- *       path /        := git(https://github.com/minond/minond.github.io.git)
- *       path /servies := git(https://github.com/minond/servies.git)
- *       path /static  := dir(.)
- *       path /github  := redirect(https://github.com/minond)
- *       path /ps      := cmd(ps, aux)
- *       path /imdb    := proxy(http://www.imdb.com:80)
- *       path /unibrow := proxy(http://localhost:3001)
+ *       path /        git(https://github.com/minond/minond.github.io.git)
+ *       path /servies git(https://github.com/minond/servies.git)
+ *       path /static  dir(.)
+ *       path /github  redirect(https://github.com/minond)
+ *       path /ps      cmd(ps, aux)
+ *       path /imdb    proxy(http://www.imdb.com:80)
+ *       path /unibrow proxy(http://localhost:3001)
  *
  *
  * Sample ast output:
@@ -161,13 +161,7 @@ func (p *parser) declaration() Declaration {
 			p.peek().kind))
 	}
 
-	if p.matches(defEqToken) {
-		decl.value = p.expression()
-	} else {
-		panic(fmt.Sprintf("Expecting `:=` but found %s instead",
-			p.peek().kind))
-	}
-
+	decl.value = p.expression()
 	return decl
 }
 

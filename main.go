@@ -300,22 +300,22 @@ func main() {
 
 	fmt.Println(runtime.Parse(`
 case Host(dearme, minond, _) =>
-  path / := proxy(http://localhost:3002)
+  path / proxy(http://localhost:3002)
 
 case Host(_, minond, co) =>
-  path / := redirect(https://minond.xyz)
+  path / redirect(https://minond.xyz)
 
 case DateTime(_, _, _, 12, _, 15) =>
-  path / := pass(500)
+  path / pass(500)
 
 case Host(_, minond, _) =>
-  path /        := git(https://github.com/minond/minond.github.io.git)
-  path /servies := git(https://github.com/minond/servies.git)
-  path /static  := dir(.)
-  path /github  := redirect(https://github.com/minond)
-  path /ps      := cmd(ps, aux)
-  path /imdb    := proxy(http://www.imdb.com:80)
-  path /unibrow := proxy(http://localhost:3001)
+  path /        git(https://github.com/minond/minond.github.io.git)
+  path /servies git(https://github.com/minond/servies.git)
+  path /static  dir(.)
+  path /github  redirect(https://github.com/minond)
+  path /ps      cmd(ps, aux)
+  path /imdb    proxy(http://www.imdb.com:80)
+  path /unibrow proxy(http://localhost:3001)
 
 `))
 

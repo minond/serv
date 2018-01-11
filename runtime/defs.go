@@ -59,7 +59,7 @@ func (m Match) String() string {
 func (d Declaration) String() string {
 	switch d.kind {
 	case path:
-		return fmt.Sprintf("path %s := %s", d.key.lexeme, d.value)
+		return fmt.Sprintf("path %s %s", d.key.lexeme, d.value)
 
 	default:
 		return "<Invalid Declaration>"
