@@ -96,81 +96,75 @@ import "fmt"
  *
  */
 func Parse(raw string) []Case {
-	for _, t := range Tokenizer(raw) {
+	tokens := tokenize(raw)
+
+	for _, t := range tokens {
 		fmt.Println(t)
 	}
 
 	return []Case{}
 }
 
-func Tokenizer(raw string) []Token {
+func tokenize(raw string) []Token {
 	var tokens []Token
 	letters := []rune(raw)
+	pos := 0
 
-	for pos := 0; pos < len(letters); pos++ {
+	identifier := func() {
+		w := word(pos, letters)
+		pos += len(w) - 1
+		tokens = append(tokens, tok(identifierToken, w))
+	}
+
+	for ; pos < len(letters); pos++ {
 		switch letters[pos] {
 		case rune(','):
-			tokens = append(tokens, Token{kind: commaToken, lexeme: ","})
-			continue
+			tokens = append(tokens, tok(commaToken, ","))
 
 		case rune('('):
-			tokens = append(tokens, Token{kind: openParToken, lexeme: "("})
-			continue
+			tokens = append(tokens, tok(openParToken, "("))
 
 		case rune(')'):
-			tokens = append(tokens, Token{kind: closeParToken, lexeme: ")"})
-			continue
+			tokens = append(tokens, tok(closeParToken, ")"))
 
 		case rune(':'):
 			if next(pos, letters).lexeme == "=" {
-				tokens = append(tokens, Token{kind: defEqToken, lexeme: ":="})
+				tokens = append(tokens, tok(defEqToken, ":="))
 				pos += 1
 			} else {
-				w := word(pos, letters)
-				pos += len(w) - 1
-				tokens = append(tokens, Token{kind: identifierToken, lexeme: w})
+				identifier()
 			}
-			break
 
 		case rune('='):
 			if next(pos, letters).lexeme == ">" {
-				tokens = append(tokens, Token{kind: blockOpenToken, lexeme: "=>"})
+				tokens = append(tokens, tok(blockOpenToken, "=>"))
 				pos += 1
 			} else {
-				w := word(pos, letters)
-				pos += len(w) - 1
-				tokens = append(tokens, Token{kind: identifierToken, lexeme: w})
+				identifier()
 			}
-			break
 
 		case rune(' '):
-			fallthrough
 		case rune('\t'):
-			fallthrough
 		case rune('\n'):
-			fallthrough
 		case rune('\r'):
-			break
 
 		default:
-			w := word(pos, letters)
-			pos += len(w) - 1
-			tokens = append(tokens, Token{kind: identifierToken, lexeme: w})
-			break
+			identifier()
 		}
 	}
 
 	return tokens
 }
 
+func tok(kind tokenKind, lexeme string) Token {
+	return Token{kind, lexeme}
+}
+
 func next(pos int, letters []rune) Token {
 	if pos+1 > len(letters) {
-		return Token{kind: eofToken}
+		return tok(eofToken, "")
 	} else {
-		return Token{
-			kind:   identifierToken,
-			lexeme: string(letters[pos+1]),
-		}
+		return tok(identifierToken, string(letters[pos+1]))
 	}
 }
 

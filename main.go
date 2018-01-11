@@ -307,7 +307,7 @@ func main() {
 	path /imdb    := proxy(http://www.imdb.com:80)
 	path /unibrow := proxy(http://localhost:3001)`))
 
-	// fmt.Println(runtime.Parse(`hi()`))
+	// fmt.Println(runtime.Parse(`hi(1, 2, 3, 213) := xyz(x => x * 3)`))
 
 	// log.Printf("reading configuration from %v\n", *config)
 	// servfile, err := ioutil.ReadFile(*config)
