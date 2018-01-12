@@ -1,13 +1,13 @@
-case Host(txtimg, minond, _) =>
+case Host(txtimg, _, _) =>
   path /             proxy(http://localhost:3002)
 
-case Host(dearme, minond, _) =>
+case Host(dearme, _, _) =>
   path /             proxy(http://localhost:3003)
 
-case Host(cp, minond, _) =>
+case Host(cp, _, _) =>
   path /             proxy(http://localhost:3004)
 
-case Host(_, minond, _) =>
+case Host(_, _, _) =>
   path /             git(https://github.com/minond/minond.github.io.git)
   path /brainfuck    git(https://github.com/minond/brainfuck.git)
   path /brainloller  git(https://github.com/minond/brainloller.git)

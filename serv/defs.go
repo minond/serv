@@ -66,6 +66,26 @@ const (
 	redirectRoute routeKind = "redirect" // Wants a url
 )
 
+func (route Route) IsCmd() bool {
+	return route.Kind == cmdRoute
+}
+
+func (route Route) IsDir() bool {
+	return route.Kind == dirRoute
+}
+
+func (route Route) IsGit() bool {
+	return route.Kind == gitRoute
+}
+
+func (route Route) IsProxy() bool {
+	return route.Kind == proxyRoute
+}
+
+func (route Route) IsRedirect() bool {
+	return route.Kind == redirectRoute
+}
+
 func (m Match) String() string {
 	var dcls []string
 
