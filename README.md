@@ -2,19 +2,30 @@
 
 A server that easily lets you serve over HTTPS, clone and serve git
 repositories, static files, setup redirects, execute commands, and create
-reverse proxies. Once installed (`go install github.com/minond/serv`), create a
-`Servfile` file that is made up of a path, handler type, and any information
-needed to create the handler. For example:
+reverse proxies, use subdomain. Once installed (`go install
+github.com/minond/serv`), create a `Servfile` file that is made up of server
+declaration with its paths, handlers, and any information needed to create the
+handler. For example:
 
 ```
-# Path        Type       Endpoint information
-/             git        https://github.com/minond/minond.github.io.git
-/servies      git        https://github.com/minond/servies.git
-/static       dir        .
-/github       redirect   https://github.com/minond
-/ps           cmd        ps aux
-/imdb         proxy      http://www.imdb.com:80
-/unibrow      proxy      http://localhost:3001
+# Handle incoming requests to txtimg.*.*
+case Host(txtimg, _, _) =>
+  path /             proxy(http://localhost:3002)
+
+# Handle incoming requests to dearme.*.*
+case Host(dearme, _, _) =>
+  path /             proxy(http://localhost:3003)
+
+# Handle incoming requests to cp.*.*
+case Host(cp, _, _) =>
+  path /             proxy(http://localhost:3004)
+
+# Handle any incoming request
+case Host(_, _, _) =>
+  path /             git(https://github.com/minond/minond.github.io.git)
+  path /brainfuck    git(https://github.com/minond/brainfuck.git)
+  path /brainloller  git(https://github.com/minond/brainloller.git)
+  path /servies      git(https://github.com/minond/servies.git)
 ```
 
 With this configuration, serv will checkout all repositories and serve them

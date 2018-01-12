@@ -268,16 +268,21 @@ func main() {
 	}
 
 	supervisor.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		handled := false
+
 		for i, server := range servers {
 			serv.Info("Comparing request to server #%d", i+1)
 
 			if server.Match(*r) {
 				server.Mux.ServeHTTP(w, r)
+				handled = true
 				break
 			}
 		}
 
-		serv.Warn("No matches found")
+		if !handled {
+			serv.Warn("No matches found")
+		}
 	})
 
 	serv.Info("Starting http server on %v", *listen)
