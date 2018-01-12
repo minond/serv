@@ -22,7 +22,7 @@ func Runtime(matches []Match) []Server {
 
 			switch decl.kind {
 			case path:
-				routes = append(routes, declToRoute(decl))
+				routes = append(routes, declToRoute(env, decl))
 
 			default:
 				Warn("Unknown declaration kind: %s", decl.kind)
@@ -68,22 +68,11 @@ func exprToMatch(env Environement, expr Expr) func(http.Request) bool {
 	}
 }
 
-func declToRoute(decl Declaration) Route {
-	var kind routeKind
+func declToRoute(env Environement, decl Declaration) Route {
 	var args []string
+	kind, ok := env.RouteKinds[decl.value.value.lexeme]
 
-	switch decl.value.value.lexeme {
-	case "cmd":
-		kind = cmdRoute
-	case "dir":
-		kind = dirRoute
-	case "git":
-		kind = gitRoute
-	case "proxy":
-		kind = proxyRoute
-	case "redirect":
-		kind = redirectRoute
-	default:
+	if !ok {
 		Fatal("Invalid route kind: %s",
 			decl.value.value.lexeme)
 	}

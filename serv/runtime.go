@@ -6,7 +6,8 @@ import (
 )
 
 type Environement struct {
-	Matchers map[string]MatcherDef
+	Matchers   map[string]MatcherDef
+	RouteKinds map[string]routeKind
 }
 
 type RuntimeValue struct {
@@ -85,6 +86,13 @@ func NewEnvironment() Environement {
 					}
 				},
 			},
+		},
+		RouteKinds: map[string]routeKind{
+			"cmd":      cmdRoute,
+			"dir":      dirRoute,
+			"git":      gitRoute,
+			"proxy":    proxyRoute,
+			"redirect": redirectRoute,
 		},
 	}
 }
