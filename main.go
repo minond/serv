@@ -18,17 +18,9 @@ import (
 	"rsc.io/letsencrypt"
 )
 
-type routeType string
-
 const (
 	indexFile = "index.html"
 	rootDir   = "repo"
-
-	routeCmd      routeType = "cmd"      // Wants a command string
-	routeDir      routeType = "dir"      // Wants a directory
-	routeGit      routeType = "git"      // Wants a git url
-	routeProxy    routeType = "proxy"    // Wants url:port?
-	routeRedirect routeType = "redirect" // Wants a url
 )
 
 var (
