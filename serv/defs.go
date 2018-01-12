@@ -2,12 +2,14 @@ package serv
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 )
 
 type tokenKind string
 type exprKind string
 type declKind string
+type routeKind string
 
 type Match struct {
 	expr Expr
@@ -31,6 +33,18 @@ type Token struct {
 	lexeme string
 }
 
+type Server struct {
+	Match  func(http.Request) bool
+	Routes []Route
+	Mux    *http.ServeMux
+}
+
+type Route struct {
+	Kind routeKind
+	Path string
+	Data string
+}
+
 const (
 	blockOpenToken  tokenKind = "blockotok" // "=>"
 	defEqToken      tokenKind = "defeqtok"  // ":="
@@ -44,6 +58,12 @@ const (
 	expr exprKind = "expr"
 
 	path declKind = "path"
+
+	cmdRoute      routeKind = "cmd"      // Wants a command string
+	dirRoute      routeKind = "dir"      // Wants a directory
+	gitRoute      routeKind = "git"      // Wants a git url
+	proxyRoute    routeKind = "proxy"    // Wants url:port?
+	redirectRoute routeKind = "redirect" // Wants a url
 )
 
 func (m Match) String() string {
