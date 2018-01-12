@@ -30,14 +30,36 @@ func Runtime(matches []Match) []Server {
 
 		servers = append(servers, Server{
 			Routes: routes,
-			Match: func(r http.Request) bool {
-				// XXX
-				return false
-			},
+			Match:  exprToMatch(match.expr),
 		})
 	}
 
 	return servers
+}
+
+func exprToMatch(expr Expr) func(http.Request) bool {
+	if expr.kind != call {
+		Fatal("Expecting a call but found %s instead", expr.kind)
+	}
+
+	var matcher Matcher
+
+	switch expr.value.lexeme {
+	case "Host":
+		matcher = HostMatcher{
+			Subdomain: Value(expr.args[0].lexeme),
+			Domain:    Value(expr.args[1].lexeme),
+			Tld:       Value(expr.args[2].lexeme),
+		}
+
+	default:
+		Warn("Unknown matcher kind: %s", expr.value.lexeme)
+		matcher = NullMatcher{}
+	}
+
+	return func(r http.Request) bool {
+		return matcher.Match(r)
+	}
 }
 
 func declToRoute(decl Declaration) Route {
