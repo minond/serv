@@ -299,24 +299,20 @@ func main() {
 	flag.Parse()
 
 	fmt.Println(serv.Runtime(serv.Parse(`
+case Host(txtimg, minond, _) =>
+  path /             proxy(http://localhost:3002)
+
 case Host(dearme, minond, _) =>
-  path / proxy(http://localhost:3002)
+  path /             proxy(http://localhost:3003)
 
-case Host(_, minond, co) =>
-  path / redirect(https://minond.xyz)
-
-# Don't allow anything at midnight
-case DateTime(_, _, _, 0, 0, 0) =>
-  path / redirect(https://google.com)
+case Host(cp, minond, _) =>
+  path /             proxy(http://localhost:3004)
 
 case Host(_, minond, _) =>
-  path /        git(https://github.com/minond/minond.github.io.git)
-  path /servies git(https://github.com/minond/servies.git)
-  path /static  dir(.)
-  path /github  redirect(https://github.com/minond)
-  path /ps      cmd(ps, aux)
-  path /imdb    proxy(http://www.imdb.com:80)
-  path /unibrow proxy(http://localhost:3001)
+  path /             git(https://github.com/minond/minond.github.io.git)
+  path /brainfuck    git(https://github.com/minond/brainfuck.git)
+  path /brainloller  git(https://github.com/minond/brainloller.git)
+  path /servies      git(https://github.com/minond/servies.git)
 
 `)))
 
