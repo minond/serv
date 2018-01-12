@@ -14,7 +14,11 @@ func Runtime(matches []Match) []Server {
 	for _, match := range matches {
 		var routes []Route
 
+		Info("Generating %s", match.expr)
+
 		for _, decl := range match.dcls {
+			Info("Mounting %s", decl)
+
 			switch decl.kind {
 			case path:
 				routes = append(routes, declToRoute(decl))
@@ -27,6 +31,7 @@ func Runtime(matches []Match) []Server {
 		servers = append(servers, Server{
 			Routes: routes,
 			Match: func(r http.Request) bool {
+				// XXX
 				return false
 			},
 		})
