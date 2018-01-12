@@ -5,8 +5,17 @@ import (
 	"strings"
 )
 
+type Environement struct {
+	Matchers map[string]MatcherDef
+}
+
 type RuntimeValue struct {
 	Value string
+}
+
+type MatcherDef struct {
+	Arity       int
+	Constructor func(...string) Matcher
 }
 
 type Matcher interface {
@@ -61,4 +70,21 @@ func (h HostMatcher) Match(r http.Request) bool {
 	return h.Subdomain.Equals(subdomain) &&
 		h.Domain.Equals(domain) &&
 		h.Tld.Equals(tld)
+}
+
+func NewEnvironment() Environement {
+	return Environement{
+		Matchers: map[string]MatcherDef{
+			"Host": {
+				Arity: 3,
+				Constructor: func(args ...string) Matcher {
+					return HostMatcher{
+						Subdomain: Value(args[0]),
+						Domain:    Value(args[1]),
+						Tld:       Value(args[2]),
+					}
+				},
+			},
+		},
+	}
 }

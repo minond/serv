@@ -10,6 +10,7 @@ import (
 // routes.
 func Runtime(matches []Match) []Server {
 	var servers []Server
+	env := NewEnvironment()
 
 	for _, match := range matches {
 		var routes []Route
@@ -30,31 +31,36 @@ func Runtime(matches []Match) []Server {
 
 		servers = append(servers, Server{
 			Routes: routes,
-			Match:  exprToMatch(match.expr),
+			Match:  exprToMatch(env, match.expr),
 		})
 	}
 
 	return servers
 }
 
-func exprToMatch(expr Expr) func(http.Request) bool {
+func exprToMatch(env Environement, expr Expr) func(http.Request) bool {
 	if expr.kind != call {
 		Fatal("Expecting a call but found %s instead", expr.kind)
 	}
 
 	var matcher Matcher
+	var args []string
 
-	switch expr.value.lexeme {
-	case "Host":
-		matcher = HostMatcher{
-			Subdomain: Value(expr.args[0].lexeme),
-			Domain:    Value(expr.args[1].lexeme),
-			Tld:       Value(expr.args[2].lexeme),
-		}
+	def, ok := env.Matchers[expr.value.lexeme]
 
-	default:
+	if ok && def.Arity != len(expr.args) {
+		Fatal("Wrong number of arguments for %s. Expected %d but got %d.",
+			expr.value.lexeme, def.Arity, len(expr.args))
+		matcher = NullMatcher{}
+	} else if !ok {
 		Warn("Unknown matcher kind: %s", expr.value.lexeme)
 		matcher = NullMatcher{}
+	} else {
+		for _, arg := range expr.args {
+			args = append(args, arg.lexeme)
+		}
+
+		matcher = def.Constructor(args...)
 	}
 
 	return func(r http.Request) bool {
