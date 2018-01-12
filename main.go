@@ -298,7 +298,7 @@ func GuessFileInDir(file, dir string) string {
 func main() {
 	flag.Parse()
 
-	fmt.Println(serv.Parse(`
+	fmt.Println(serv.Runtime(serv.Parse(`
 case Host(dearme, minond, _) =>
   path / proxy(http://localhost:3002)
 
@@ -307,7 +307,7 @@ case Host(_, minond, co) =>
 
 # Don't allow anything at midnight
 case DateTime(_, _, _, 0, 0, 0) =>
-  path / pass(500)
+  path / redirect(https://google.com)
 
 case Host(_, minond, _) =>
   path /        git(https://github.com/minond/minond.github.io.git)
@@ -318,7 +318,7 @@ case Host(_, minond, _) =>
   path /imdb    proxy(http://www.imdb.com:80)
   path /unibrow proxy(http://localhost:3001)
 
-`))
+`)))
 
 	// fmt.Println(serv.Parse(`hi(1, 2, 3, 213) := xyz(x => x * 3)`))
 
