@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -14,7 +15,7 @@ import (
 	"time"
 
 	"github.com/minond/serv/serv"
-	"rsc.io/letsencrypt"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 type stringListFlag []string
@@ -304,13 +305,28 @@ func main() {
 			serv.Info("Whitelisting %s", domain)
 		}
 
-		var m letsencrypt.Manager
+		// var m letsencrypt.Manager
+		//
+		// if err := m.CacheFile(*certCache); err != nil {
+		// 	serv.Fatal("%s", err)
+		// }
+		//
+		// serv.Fatal("%s", m.Serve())
 
-		if err := m.CacheFile(*certCache); err != nil {
-			serv.Fatal("%s", err)
+		m := &autocert.Manager{
+			Cache:      autocert.DirCache(*certCache),
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(certDomains...),
 		}
 
-		serv.Fatal("%s", m.Serve())
+		go http.ListenAndServe(":http", m.HTTPHandler(nil))
+
+		s := &http.Server{
+			Addr:      ":https",
+			TLSConfig: &tls.Config{GetCertificate: m.GetCertificate},
+		}
+
+		s.ListenAndServeTLS("", "")
 	} else {
 		serv.Info("Starting http server on %v", *listen)
 		serv.Fatal("%s", http.ListenAndServe(*listen, supervisor))
