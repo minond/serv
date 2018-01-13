@@ -300,11 +300,13 @@ func main() {
 	})
 
 	if *certCache != "" {
+		var domains []string
 		for _, domain := range certDomains {
+			domains = append(domains, domain)
 			serv.Info("Whitelisting %s", domain)
 		}
 
-		serv.Fatal("%s", http.Serve(autocert.NewListener(certDomains...), supervisor))
+		serv.Fatal("%s", http.Serve(autocert.NewListener(domains...), supervisor))
 	} else {
 		serv.Info("Starting http server on %v", *listen)
 		serv.Fatal("%s", http.ListenAndServe(*listen, supervisor))
