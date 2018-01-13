@@ -1,6 +1,5 @@
 package main
 
-// TODO domain checker???
 import (
 	"flag"
 	"fmt"
@@ -12,104 +11,24 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"regexp"
 	"strings"
 	"time"
 
+	"github.com/minond/serv/serv"
 	"rsc.io/letsencrypt"
 )
-
-type routeType string
-
-type Route struct {
-	Path string
-	Type routeType
-	Data string
-}
 
 const (
 	indexFile = "index.html"
 	rootDir   = "repo"
-
-	routeCmd      routeType = "cmd"      // Wants a command string
-	routeDir      routeType = "dir"      // Wants a directory
-	routeGit      routeType = "git"      // Wants a git url
-	routeProxy    routeType = "proxy"    // Wants url:port?
-	routeRedirect routeType = "redirect" // Wants a url
 )
 
 var (
-	routeTypes = map[string]routeType{
-		"cmd":      routeCmd,
-		"dir":      routeDir,
-		"git":      routeGit,
-		"proxy":    routeProxy,
-		"redirect": routeRedirect,
-	}
-
 	listen       = flag.String("listen", ":3002", "Host and port to listen on.")
 	listenHttps  = flag.String("listenHttps", "", "Path to Let's Encrypt cache file instead of host/port.")
 	config       = flag.String("config", "./Servfile", "Path to Servfile file.")
 	pullInterval = flag.Duration("pullInterval", 15*time.Minute, "Interval git repos are pulled at.")
 )
-
-func IsCmd(route Route) bool {
-	return route.Type == routeCmd
-}
-
-func IsDir(route Route) bool {
-	return route.Type == routeDir
-}
-
-func IsGit(route Route) bool {
-	return route.Type == routeGit
-}
-
-func IsProxy(route Route) bool {
-	return route.Type == routeProxy
-}
-
-func IsRedirect(route Route) bool {
-	return route.Type == routeRedirect
-}
-
-func ParseServfile(raw []byte) (routes []Route) {
-	lines := strings.Split(strings.TrimSpace(string(raw)), "\n")
-	regex := regexp.MustCompile(`^([^\s|.]+)\s+([^\s|.]+)\s+(.+)$`)
-
-	for _, line := range lines {
-		clean := strings.TrimSpace(line)
-
-		if clean == "" || clean[0] == byte('#') {
-			continue
-		}
-
-		match := regex.FindAllStringSubmatch(clean, -1)
-
-		if len(match) != 1 || len(match[0]) != 4 {
-			log.Printf("ignoring configuration line: %v\n", line)
-			continue
-		}
-
-		rpath := match[0][1]
-		rdata := match[0][3]
-		rtype, valid := routeTypes[match[0][2]]
-
-		log.Printf("route match %v using %v to %v\n", rpath, rtype, rdata)
-
-		if valid == false {
-			panic(fmt.Sprintf("unknown route type: %v", match[0][2]))
-		}
-
-		routes = append(routes, Route{
-			Path: rpath,
-			Type: rtype,
-			Data: rdata,
-		})
-	}
-
-	return routes
-}
 
 // Turns https://github.com/minond/minond.github.io.git into
 // repo/github.com/minond/minond.github.io.git
@@ -124,7 +43,8 @@ func GetRepoPath(repoURL string) (string, error) {
 }
 
 func PullGitRepoInterval(repoURL string) {
-	log.Printf("pulling %v every %v\n", repoURL, *pullInterval)
+	serv.Info("Pulling %v every %v", repoURL, *pullInterval)
+
 	for {
 		time.Sleep(*pullInterval)
 		PullGitRepo(repoURL)
@@ -138,7 +58,7 @@ func PullGitRepo(repoURL string) {
 		return
 	}
 
-	log.Printf("running git pull on %v\n", path)
+	serv.Info("Running git pull on %v", path)
 
 	cmd := exec.Command("git", "pull")
 	cmd.Stdout = os.Stdout
@@ -146,7 +66,7 @@ func PullGitRepo(repoURL string) {
 	cmd.Dir = path
 
 	if err = cmd.Run(); err != nil {
-		log.Printf("error running git pull on %v: %v\n", path, err)
+		serv.Fatal("Error running git pull on %v: %v", path, err)
 	}
 }
 
@@ -158,7 +78,7 @@ func CheckoutGitRepo(repoURL string) (string, error) {
 		return "", err
 	}
 
-	log.Printf("mkdir %v\n", path)
+	serv.Info("Mkdir %v", path)
 	err = os.MkdirAll(path, 0755)
 
 	if err != nil {
@@ -205,7 +125,7 @@ func AssertDir(name string) {
 	}
 }
 
-func SetProxyHandler(mux *http.ServeMux, route Route) {
+func SetProxyHandler(mux *http.ServeMux, route serv.Route) {
 	proxyURL, err := url.Parse(route.Data)
 	proxyPath := proxyURL.Path
 
@@ -219,7 +139,7 @@ func SetProxyHandler(mux *http.ServeMux, route Route) {
 
 		r.URL.Path = proxyPath + newPath
 
-		log.Printf("making request to %v\n", r.URL)
+		serv.Info("Making request to %v", r.URL)
 		handler := httputil.NewSingleHostReverseProxy(proxyURL)
 		handler.ServeHTTP(w, r)
 	}
@@ -228,11 +148,11 @@ func SetProxyHandler(mux *http.ServeMux, route Route) {
 	mux.HandleFunc(route.Path+"/", proxy)
 }
 
-func SetCmdHandler(mux *http.ServeMux, route Route) {
+func SetCmdHandler(mux *http.ServeMux, route serv.Route) {
 	mux.HandleFunc(route.Path, func(w http.ResponseWriter, r *http.Request) {
 		parts := strings.Split(route.Data, " ")
 		cmd := exec.Command(parts[0], parts[1:]...)
-		log.Printf("executing `%v` command\n", parts)
+		serv.Info("Executing `%v` command", parts)
 
 		cmd.Stdout = w
 		cmd.Stderr = w
@@ -240,13 +160,13 @@ func SetCmdHandler(mux *http.ServeMux, route Route) {
 	})
 }
 
-func SetRedirectHandler(mux *http.ServeMux, route Route) {
+func SetRedirectHandler(mux *http.ServeMux, route serv.Route) {
 	mux.HandleFunc(route.Path, func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, route.Data, http.StatusSeeOther)
 	})
 }
 
-func SetDirHandler(mux *http.ServeMux, route Route) {
+func SetDirHandler(mux *http.ServeMux, route serv.Route) {
 	serveFile := func(w http.ResponseWriter, r *http.Request) {
 		filePath := strings.Replace(r.URL.Path, route.Path, "", 1)
 
@@ -255,7 +175,7 @@ func SetDirHandler(mux *http.ServeMux, route Route) {
 		}
 
 		loc := GuessFileInDir(filePath, route.Data)
-		log.Printf("serving %v from %v\n", r.URL.String(), loc)
+		serv.Info("Serving %v from %v", r.URL.String(), loc)
 		http.ServeFile(w, r, loc)
 	}
 
@@ -271,7 +191,7 @@ func SetDirHandler(mux *http.ServeMux, route Route) {
 	}
 }
 
-func SetGitHandler(mux *http.ServeMux, route Route) {
+func SetGitHandler(mux *http.ServeMux, route serv.Route) {
 	rootPath, _ := GetRepoPath(route.Data)
 	route.Data = rootPath
 	SetDirHandler(mux, route)
@@ -296,48 +216,78 @@ func GuessFileInDir(file, dir string) string {
 	}
 }
 
-func main() {
-	flag.Parse()
-
-	log.Printf("reading configuration from %v\n", *config)
-	servfile, err := ioutil.ReadFile(*config)
-
-	if err != nil {
-		panic(fmt.Sprintf("error reading Servfile: %v", err))
-	}
-
-	routes := ParseServfile(servfile)
+func BuildMux(routes []serv.Route) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	for _, route := range routes {
-		log.Printf("creating %v handler for %v\n", route.Type, route.Path)
+		serv.Info("Creating %v handler for %v", route.Kind, route.Path)
 
 		switch {
-		case IsGit(route):
+		case route.IsGit():
 			AssertGitRepo(route.Data)
 			SetGitHandler(mux, route)
 			go PullGitRepoInterval(route.Data)
 
-		case IsDir(route):
+		case route.IsDir():
 			AssertDir(route.Data)
 			SetDirHandler(mux, route)
 
-		case IsRedirect(route):
+		case route.IsRedirect():
 			SetRedirectHandler(mux, route)
 
-		case IsCmd(route):
+		case route.IsCmd():
 			SetCmdHandler(mux, route)
 
-		case IsProxy(route):
+		case route.IsProxy():
 			SetProxyHandler(mux, route)
 
 		default:
-			panic(fmt.Sprintf("invalid route type `%v` in %v\n", route.Type, route))
+			serv.Fatal("Invalid route type `%v` in %v", route.Kind, route)
 		}
 	}
 
+	return mux
+}
+
+func main() {
+	flag.Parse()
+
+	serv.Info("Reading configuration from %v", *config)
+	contents, err := ioutil.ReadFile(*config)
+
+	if err != nil {
+		serv.Fatal("Error reading Servfile: %v", err)
+	}
+
+	servers := serv.Runtime(serv.Parse(string(contents)))
+	supervisor := http.NewServeMux()
+	http.DefaultServeMux = supervisor
+
+	for i, server := range servers {
+		servers[i].Mux = BuildMux(server.Routes)
+	}
+
+	supervisor.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		handled := false
+
+		for i, server := range servers {
+			serv.Info("Comparing request to server #%d", i+1)
+
+			if server.Match(*r) {
+				server.Mux.ServeHTTP(w, r)
+				handled = true
+				break
+			}
+		}
+
+		if !handled {
+			serv.Warn("No matches found")
+		}
+	})
+
+	serv.Info("Starting http server on %v", *listen)
+
 	if *listenHttps != "" {
-		log.Printf("starting https server on %v\n", *listen)
 
 		var m letsencrypt.Manager
 
@@ -345,15 +295,8 @@ func main() {
 			log.Fatal(err)
 		}
 
-		// Because of this:
-		// > Serve runs an HTTP/HTTPS web server using TLS certificates
-		// > obtained by the manager. The HTTP server redirects all requests to
-		// > the HTTPS server. The HTTPS server obtains TLS certificates as
-		// > needed and responds to requests by invoking http.DefaultServeMux.
-		http.DefaultServeMux = mux
-		log.Fatal(m.Serve())
+		serv.Fatal("%s", m.Serve())
 	} else {
-		log.Printf("starting http server on %v\n", *listen)
-		log.Fatal(http.ListenAndServe(*listen, mux))
+		serv.Fatal("%s", http.ListenAndServe(*listen, nil))
 	}
 }
