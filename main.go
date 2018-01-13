@@ -1,10 +1,10 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -15,8 +15,10 @@ import (
 	"time"
 
 	"github.com/minond/serv/serv"
-	"rsc.io/letsencrypt"
+	"golang.org/x/crypto/acme/autocert"
 )
+
+type stringListFlag []string
 
 const (
 	indexFile = "index.html"
@@ -24,8 +26,9 @@ const (
 )
 
 var (
+	certDomains  stringListFlag
+	certCache    = flag.String("certCache", "", "Path to Let's Encrypt cache file.")
 	listen       = flag.String("listen", ":3002", "Host and port to listen on.")
-	listenHttps  = flag.String("listenHttps", "", "Path to Let's Encrypt cache file instead of host/port.")
 	config       = flag.String("config", "./Servfile", "Path to Servfile file.")
 	pullInterval = flag.Duration("pullInterval", 15*time.Minute, "Interval git repos are pulled at.")
 )
@@ -249,9 +252,21 @@ func BuildMux(routes []serv.Route) *http.ServeMux {
 	return mux
 }
 
-func main() {
-	flag.Parse()
+func (l *stringListFlag) String() string {
+	return strings.Join(*l, ", ")
+}
 
+func (l *stringListFlag) Set(val string) error {
+	*l = append(*l, val)
+	return nil
+}
+
+func init() {
+	flag.Var(&certDomains, "certDomain", "Domain(s) whitelist.")
+	flag.Parse()
+}
+
+func main() {
 	serv.Info("Reading configuration from %v", *config)
 	contents, err := ioutil.ReadFile(*config)
 
@@ -285,18 +300,29 @@ func main() {
 		}
 	})
 
-	serv.Info("Starting http server on %v", *listen)
-
-	if *listenHttps != "" {
-
-		var m letsencrypt.Manager
-
-		if err := m.CacheFile(*listenHttps); err != nil {
-			log.Fatal(err)
+	if *certCache != "" {
+		for _, domain := range certDomains {
+			serv.Info("Whitelisting %s", domain)
 		}
 
-		serv.Fatal("%s", m.Serve())
+		m := &autocert.Manager{
+			Cache:      autocert.DirCache(*certCache),
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(certDomains...),
+		}
+
+		s := &http.Server{
+			Addr: ":https",
+			TLSConfig: &tls.Config{
+				GetCertificate: m.GetCertificate,
+			},
+		}
+
+		serv.Info("Starting https server")
+		s.ListenAndServeTLS("", "")
+		serv.Fatal("%s", http.ListenAndServe(":http", m.HTTPHandler(nil)))
 	} else {
+		serv.Info("Starting http server on %v", *listen)
 		serv.Fatal("%s", http.ListenAndServe(*listen, nil))
 	}
 }
