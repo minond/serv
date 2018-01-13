@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/minond/serv/serv"
-	"golang.org/x/crypto/acme/autocert"
+	"rsc.io/letsencrypt"
 )
 
 type stringListFlag []string
@@ -300,13 +300,17 @@ func main() {
 	})
 
 	if *certCache != "" {
-		var domains []string
 		for _, domain := range certDomains {
-			domains = append(domains, domain)
 			serv.Info("Whitelisting %s", domain)
 		}
 
-		serv.Fatal("%s", http.Serve(autocert.NewListener(domains...), supervisor))
+		var m letsencrypt.Manager
+
+		if err := m.CacheFile(*listenHttps); err != nil {
+			serv.Fatal(err)
+		}
+
+		serv.Fatal("%s", m.Serve())
 	} else {
 		serv.Info("Starting http server on %v", *listen)
 		serv.Fatal("%s", http.ListenAndServe(*listen, supervisor))
