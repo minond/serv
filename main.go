@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -305,24 +304,9 @@ func main() {
 			serv.Info("Whitelisting %s", domain)
 		}
 
-		m := &autocert.Manager{
-			Cache:      autocert.DirCache(*certCache),
-			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(certDomains...),
-		}
-
-		s := &http.Server{
-			Addr: ":https",
-			TLSConfig: &tls.Config{
-				GetCertificate: m.GetCertificate,
-			},
-		}
-
-		serv.Info("Starting https server")
-		s.ListenAndServeTLS("", "")
-		serv.Fatal("%s", http.ListenAndServe(":http", m.HTTPHandler(nil)))
+		serv.Fatal("%s", http.Serve(autocert.NewListener(certDomains...), supervisor))
 	} else {
 		serv.Info("Starting http server on %v", *listen)
-		serv.Fatal("%s", http.ListenAndServe(*listen, nil))
+		serv.Fatal("%s", http.ListenAndServe(*listen, supervisor))
 	}
 }
