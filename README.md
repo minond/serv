@@ -2,7 +2,7 @@
 
 A server that easily lets you serve over HTTPS, clone and serve git
 repositories, static files, setup redirects, execute commands, and create
-reverse proxies, use subdomain. Once installed (`go install
+reverse proxies, use multiple subdomains. Once installed (`go install
 github.com/minond/serv`), create a `Servfile` file that is made up of server
 declaration with its paths, handlers, and any information needed to create the
 handler. For example:
@@ -35,8 +35,8 @@ directory with your `Servfile` and you're done. Additional options are:
 ```bash
 -certCache string
       Path to Let's Encrypt cache file.
--certDomain string
-      Domain whitelist.
+-certDomain value
+      Domain(s) whitelist.
 -config string
       Path to Servfile file. (default "./Servfile")
 -listen string
