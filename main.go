@@ -305,14 +305,6 @@ func main() {
 			serv.Info("Whitelisting %s", domain)
 		}
 
-		// var m letsencrypt.Manager
-		//
-		// if err := m.CacheFile(*certCache); err != nil {
-		// 	serv.Fatal("%s", err)
-		// }
-		//
-		// serv.Fatal("%s", m.Serve())
-
 		m := &autocert.Manager{
 			Cache:      autocert.DirCache(*certCache),
 			Prompt:     autocert.AcceptTOS,
