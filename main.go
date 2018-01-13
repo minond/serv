@@ -306,8 +306,8 @@ func main() {
 
 		var m letsencrypt.Manager
 
-		if err := m.CacheFile(*listenHttps); err != nil {
-			serv.Fatal(err)
+		if err := m.CacheFile(*certCache); err != nil {
+			serv.Fatal("%s", err)
 		}
 
 		serv.Fatal("%s", m.Serve())
