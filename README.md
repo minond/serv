@@ -33,12 +33,14 @@ along with serving or proxying anything else you tell it to. Run `serv` in a
 directory with your `Servfile` and you're done. Additional options are:
 
 ```bash
+-certCache string
+      Path to Let's Encrypt cache file.
+-certDomain string
+      Domain whitelist.
 -config string
       Path to Servfile file. (default "./Servfile")
 -listen string
       Host and port to listen on. (default ":3002")
--listenHttps string
-      Path to Let's Encrypt cache file instead of host/port.
 -pullInterval duration
       Interval git repos are pulled at. (default 15m0s)
 ```
