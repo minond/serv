@@ -27,7 +27,7 @@ const (
 
 var (
 	certDomains  stringListFlag
-	certCache    = flag.String("certCache", "", "Path to Let's Encrypt cache file.")
+	certCache    = flag.String("certCache", "", "Path to Let's Encrypt cache file. Use this along with the cache definition.")
 	listen       = flag.String("listen", "", "Host and port to listen on.")
 	config       = flag.String("config", "./Servfile", "Path to Servfile file.")
 	pullInterval = flag.Duration("pullInterval", 15*time.Minute, "Interval git repos are pulled at.")
@@ -262,7 +262,7 @@ func (l *stringListFlag) Set(val string) error {
 }
 
 func init() {
-	flag.Var(&certDomains, "certDomain", "Domain(s) whitelist.")
+	flag.Var(&certDomains, "certDomain", "Domain(s) whitelist. Use this along with the domains definition.")
 	flag.Parse()
 }
 

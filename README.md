@@ -8,6 +8,14 @@ declaration with its paths, handlers, and any information needed to create the
 handler. For example:
 
 ```
+# Define ssl information, like Let's Encrypt cache location and domains to
+# whitelist. This is required when subdomains are in use.
+def cache ./cache
+
+def domains [ minond.co www.minond.co
+              minond.xyz www.minond.xyz
+              dearme.minond.xyz cp.minond.xyz txtimg.minond.xyz ]
+
 # Handle incoming requests to txtimg.*.*
 case Host(txtimg, _, _) =>
   path /             proxy(http://localhost:3002)
@@ -34,9 +42,9 @@ directory with your `Servfile` and you're done. Additional options are:
 
 ```bash
 -certCache string
-      Path to Let's Encrypt cache file.
+      Path to Let's Encrypt cache file. Use this along with the cache definition.
 -certDomain value
-      Domain(s) whitelist.
+      Domain(s) whitelist. Use this along with the domains definition.
 -config string
       Path to Servfile file. (default "./Servfile")
 -listen string
