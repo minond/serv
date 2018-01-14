@@ -28,7 +28,7 @@ const (
 var (
 	certDomains  stringListFlag
 	certCache    = flag.String("certCache", "", "Path to Let's Encrypt cache file.")
-	listen       = flag.String("listen", ":3002", "Host and port to listen on.")
+	listen       = flag.String("listen", "", "Host and port to listen on.")
 	config       = flag.String("config", "./Servfile", "Path to Servfile file.")
 	pullInterval = flag.Duration("pullInterval", 15*time.Minute, "Interval git repos are pulled at.")
 )
@@ -274,7 +274,17 @@ func main() {
 		serv.Fatal("Error reading Servfile: %v", err)
 	}
 
-	servers := serv.Runtime(serv.Parse(string(contents)))
+	decls, matches := serv.Parse(string(contents))
+	servers, env := serv.Runtime(decls, matches)
+
+	if cache, ok := env.GetValue("cache"); ok && *certCache == "" {
+		*certCache = cache.Value()
+	}
+
+	if domains, ok := env.GetValue("domains"); ok {
+		certDomains = append(certDomains, domains.Values()...)
+	}
+
 	supervisor := http.NewServeMux()
 	http.DefaultServeMux = supervisor
 
@@ -300,7 +310,7 @@ func main() {
 		}
 	})
 
-	if *certCache != "" {
+	if *listen == "" {
 		for _, domain := range certDomains {
 			serv.Info("Whitelisting %s", domain)
 		}
@@ -311,7 +321,7 @@ func main() {
 			HostPolicy: autocert.HostWhitelist(certDomains...),
 		}
 
-		go http.ListenAndServe(":http", m.HTTPHandler(nil))
+		go serv.Fatal("%s", http.ListenAndServe(":http", m.HTTPHandler(nil)))
 
 		s := &http.Server{
 			Addr:      ":https",

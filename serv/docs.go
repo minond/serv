@@ -5,13 +5,14 @@ package serv
  *
  * Grammar:
  *
- *     MAIN            = match* EOF ;
+ *     MAIN            = declaration* match* EOF ;
  *
  *     match           = "case" expression "=>" declaration* ;
  *
- *     declaration     = "path" IDENTIFIER expression ;
+ *     declaration     = ["path"|"def"] IDENTIFIER expression ;
  *
  *     expression      = IDENTIFIER
+ *                     | "[" IDENTIFIER* "]"
  *                     | IDENTIFIER "(" [IDENTIFIER ["," IDENTIFIER]*] ")" ;
  *
  *     IDENTIFIER      = [^\s]+

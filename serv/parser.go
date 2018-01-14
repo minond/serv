@@ -12,19 +12,24 @@ type parser struct {
 
 var eof = tok(eofToken, "<eof>")
 
-func Parse(raw string) []Match {
+func Parse(raw string) ([]Declaration, []Match) {
 	p := parser{
 		pos:    0,
 		tokens: tokenize(preprocessor(raw)),
 	}
 
+	var decls []Declaration
 	var matches []Match
 
 	for !p.done() {
-		matches = append(matches, p.match())
+		if p.peek().lexeme == "case" {
+			matches = append(matches, p.match())
+		} else {
+			decls = append(decls, p.declaration())
+		}
 	}
 
-	return matches
+	return decls, matches
 }
 
 func (p *parser) match() Match {
@@ -42,7 +47,7 @@ func (p *parser) match() Match {
 	}
 
 	for !p.done() {
-		mat.dcls = append(mat.dcls, p.declaration())
+		mat.decls = append(mat.decls, p.declaration())
 
 		if p.peek().lexeme == "case" {
 			break
@@ -58,6 +63,9 @@ func (p *parser) declaration() Declaration {
 	switch p.eat().lexeme {
 	case "path":
 		decl.kind = path
+
+	case "def":
+		decl.kind = def
 
 	default:
 		panic(fmt.Sprintf("Invalid declaration type: %s",
@@ -76,33 +84,45 @@ func (p *parser) declaration() Declaration {
 }
 
 func (p *parser) expression() Expr {
-	expr := Expr{
-		kind:  expr,
-		value: p.eat(),
-	}
+	expr := Expr{kind: expr}
 
-	if p.matches(openParToken) {
-		var args []Token
-		expr.kind = call
+	// Handles "[" IDENTIFIER* "]"
+	if p.matches(openSqrToken) {
+		var items []Token
+		expr.kind = list
 
-	arg:
-		if p.matches(closeParToken) {
-			return expr
+		for !p.matches(closeSqrToken) {
+			items = append(items, p.eat())
+			expr.args = items
 		}
+	} else {
+		// Handles IDENTIFIER
+		//       | IDENTIFIER "(" [IDENTIFIER ["," IDENTIFIER]*] ")" ;
+		expr.value = p.eat()
 
-		if p.matches(identifierToken) {
-			args = append(args, p.prev())
-			expr.args = args
-		} else {
-			panic(fmt.Sprintf("Expecting an identifier but found %s",
-				p.peek().kind))
-		}
+		if p.matches(openParToken) {
+			var args []Token
+			expr.kind = call
 
-		if p.matches(commaToken) {
-			goto arg
-		} else if !p.matches(closeParToken) {
-			panic(fmt.Sprintf("Expecting a closing paren but found %s",
-				p.peek().kind))
+		arg:
+			if p.matches(closeParToken) {
+				return expr
+			}
+
+			if p.matches(identifierToken) {
+				args = append(args, p.prev())
+				expr.args = args
+			} else {
+				panic(fmt.Sprintf("Expecting an identifier but found %s",
+					p.peek().kind))
+			}
+
+			if p.matches(commaToken) {
+				goto arg
+			} else if !p.matches(closeParToken) {
+				panic(fmt.Sprintf("Expecting a closing paren but found %s",
+					p.peek().kind))
+			}
 		}
 	}
 
@@ -188,6 +208,12 @@ func tokenize(raw string) []Token {
 		case rune(','):
 			tokens = append(tokens, tok(commaToken, ","))
 
+		case rune('['):
+			tokens = append(tokens, tok(openSqrToken, "["))
+
+		case rune(']'):
+			tokens = append(tokens, tok(closeSqrToken, "]"))
+
 		case rune('('):
 			tokens = append(tokens, tok(openParToken, "("))
 
@@ -240,6 +266,10 @@ func word(pos int, letters []rune) string {
 
 	for ; pos < len(letters); pos++ {
 		switch letters[pos] {
+		case rune('['):
+			fallthrough
+		case rune(']'):
+			fallthrough
 		case rune('('):
 			fallthrough
 		case rune(')'):

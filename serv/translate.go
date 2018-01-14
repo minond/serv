@@ -6,18 +6,18 @@ import (
 )
 
 // Translates an ast into setup and runtime informatin. `Match.expr` should be
-// used to generate the `Server.Match` function and `Match.dcls` are the
+// used to generate the `Server.Match` function and `Match.decls` are the
 // routes.
-func Runtime(matches []Match) []Server {
+func Runtime(decls []Declaration, matches []Match) ([]Server, Environement) {
 	var servers []Server
-	env := NewEnvironment()
+	env := NewEnvironment(decls)
 
 	for _, match := range matches {
 		var routes []Route
 
 		Info("Generating %s", match.expr)
 
-		for _, decl := range match.dcls {
+		for _, decl := range match.decls {
 			Info("Mounting %s", decl)
 
 			switch decl.kind {
@@ -35,7 +35,7 @@ func Runtime(matches []Match) []Server {
 		})
 	}
 
-	return servers
+	return servers, env
 }
 
 func exprToMatch(env Environement, expr Expr) func(http.Request) bool {

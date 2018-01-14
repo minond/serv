@@ -1,3 +1,9 @@
+def cache ./cache
+
+def domains [ minond.co www.minond.co
+              minond.xyz www.minond.xyz
+              dearme.minond.xyz cp.minond.xyz txtimg.minond.xyz ]
+
 case Host(txtimg, _, _) =>
   path /             proxy(http://localhost:3002)
 

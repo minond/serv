@@ -6,8 +6,9 @@ import (
 )
 
 type Environement struct {
-	Matchers   map[string]MatcherDef
-	RouteKinds map[string]routeKind
+	Matchers     map[string]MatcherDef
+	RouteKinds   map[string]routeKind
+	Declarations []Declaration
 }
 
 type RuntimeValue struct {
@@ -73,8 +74,9 @@ func (h HostMatcher) Match(r http.Request) bool {
 		h.Tld.Equals(tld)
 }
 
-func NewEnvironment() Environement {
+func NewEnvironment(decls []Declaration) Environement {
 	return Environement{
+		Declarations: decls,
 		Matchers: map[string]MatcherDef{
 			"Host": {
 				Arity: 3,
@@ -95,4 +97,14 @@ func NewEnvironment() Environement {
 			"redirect": redirectRoute,
 		},
 	}
+}
+
+func (env Environement) GetValue(name string) (Expr, bool) {
+	for _, decl := range env.Declarations {
+		if decl.key.lexeme == name {
+			return decl.value, true
+		}
+	}
+
+	return Expr{}, false
 }
