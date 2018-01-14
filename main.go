@@ -321,7 +321,7 @@ func main() {
 			HostPolicy: autocert.HostWhitelist(certDomains...),
 		}
 
-		go serv.Fatal("%s", http.ListenAndServe(":http", m.HTTPHandler(nil)))
+		go http.ListenAndServe(":http", m.HTTPHandler(nil))
 
 		s := &http.Server{
 			Addr:      ":https",
