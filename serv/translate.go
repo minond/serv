@@ -29,13 +29,27 @@ func Runtime(decls []Declaration, matches []Match) ([]Server, Environement) {
 			}
 		}
 
-		servers = append(servers, Server{
+		server := Server{
 			Routes: routes,
 			Match:  exprToMatch(env, match.expr),
-		})
+			Mux:    buildMux(routes),
+		}
+
+		servers = append(servers, server)
 	}
 
 	return servers, env
+}
+
+func buildMux(routes []Route) *http.ServeMux {
+	mux := http.NewServeMux()
+
+	for _, route := range routes {
+		Info("Creating handler for %v", route.Path)
+		route.Handler.Constructor(route, mux)
+	}
+
+	return mux
 }
 
 func exprToMatch(env Environement, expr Expr) func(http.Request) bool {
@@ -70,7 +84,7 @@ func exprToMatch(env Environement, expr Expr) func(http.Request) bool {
 
 func declToRoute(env Environement, decl Declaration) Route {
 	var args []string
-	kind, ok := env.RouteKinds[decl.value.value.lexeme]
+	handler, ok := env.Handlers[decl.value.value.lexeme]
 
 	if !ok {
 		Fatal("Invalid route kind: %s",
@@ -82,8 +96,8 @@ func declToRoute(env Environement, decl Declaration) Route {
 	}
 
 	return Route{
-		Kind: kind,
-		Path: decl.key.lexeme,
-		Data: strings.Join(args, " "),
+		Handler: handler,
+		Path:    decl.key.lexeme,
+		Data:    strings.Join(args, " "),
 	}
 }

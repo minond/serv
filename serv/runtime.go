@@ -7,12 +7,17 @@ import (
 
 type Environement struct {
 	Matchers     map[string]MatcherDef
-	RouteKinds   map[string]routeKind
+	Handlers     map[string]HandlerDef
 	Declarations []Declaration
 }
 
 type RuntimeValue struct {
 	Value string
+}
+
+type HandlerDef struct {
+	Arity       int
+	Constructor func(Route, *http.ServeMux)
 }
 
 type MatcherDef struct {
@@ -89,12 +94,41 @@ func NewEnvironment(decls []Declaration) Environement {
 				},
 			},
 		},
-		RouteKinds: map[string]routeKind{
-			"cmd":      cmdRoute,
-			"dir":      dirRoute,
-			"git":      gitRoute,
-			"proxy":    proxyRoute,
-			"redirect": redirectRoute,
+
+		Handlers: map[string]HandlerDef{
+			"git": {
+				Arity: 1,
+				Constructor: func(route Route, mux *http.ServeMux) {
+					AssertGitRepo(route.Data)
+					SetGitHandler(mux, route)
+					go PullGitRepoInterval(route.Data)
+				},
+			},
+			"dir": {
+				Arity: 1,
+				Constructor: func(route Route, mux *http.ServeMux) {
+					AssertDir(route.Data)
+					SetDirHandler(mux, route)
+				},
+			},
+			"redirect": {
+				Arity: 1,
+				Constructor: func(route Route, mux *http.ServeMux) {
+					SetRedirectHandler(mux, route)
+				},
+			},
+			"cmd": {
+				Arity: 1,
+				Constructor: func(route Route, mux *http.ServeMux) {
+					SetCmdHandler(mux, route)
+				},
+			},
+			"proxy": {
+				Arity: 1,
+				Constructor: func(route Route, mux *http.ServeMux) {
+					SetProxyHandler(mux, route)
+				},
+			},
 		},
 	}
 }

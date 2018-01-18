@@ -9,7 +9,6 @@ import (
 type tokenKind string
 type exprKind string
 type declKind string
-type routeKind string
 
 type Match struct {
 	expr  Expr
@@ -40,9 +39,9 @@ type Server struct {
 }
 
 type Route struct {
-	Kind routeKind
-	Path string
-	Data string
+	Handler HandlerDef
+	Path    string
+	Data    string
 }
 
 const (
@@ -62,33 +61,7 @@ const (
 
 	path declKind = "path"
 	def  declKind = "def"
-
-	cmdRoute      routeKind = "cmd"      // Wants a command string
-	dirRoute      routeKind = "dir"      // Wants a directory
-	gitRoute      routeKind = "git"      // Wants a git url
-	proxyRoute    routeKind = "proxy"    // Wants url:port?
-	redirectRoute routeKind = "redirect" // Wants a url
 )
-
-func (route Route) IsCmd() bool {
-	return route.Kind == cmdRoute
-}
-
-func (route Route) IsDir() bool {
-	return route.Kind == dirRoute
-}
-
-func (route Route) IsGit() bool {
-	return route.Kind == gitRoute
-}
-
-func (route Route) IsProxy() bool {
-	return route.Kind == proxyRoute
-}
-
-func (route Route) IsRedirect() bool {
-	return route.Kind == redirectRoute
-}
 
 func (m Match) String() string {
 	var decls []string
