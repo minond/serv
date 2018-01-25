@@ -62,3 +62,7 @@ using the [`setcap`](https://linux.die.net/man/8/setcap) command:
 ```bash
 sudo setcap 'cap_net_bind_service=+ep' $(which serv)
 ```
+
+### On Vim?
+
+Get the plugin at https://github.com/minond/vim-serv.
