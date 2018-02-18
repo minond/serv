@@ -5,7 +5,9 @@ import (
 	"flag"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/minond/serv/serv"
 	"golang.org/x/crypto/acme/autocert"
@@ -35,6 +37,46 @@ func init() {
 }
 
 func main() {
+	ch := make(chan bool)
+
+	setupHandler()
+	go setupListener()
+	go watch(*config, ch)
+
+	serv.Info("Watching %v for changes", *config)
+
+	for {
+		<-ch
+		serv.Info("Reacting to changes in %v", *config)
+		setupHandler()
+		serv.Info("Applied updates to %v", *config)
+	}
+}
+
+func watch(fileName string, ch chan bool) {
+	curr, err := os.Stat(fileName)
+
+	if err != nil {
+		serv.Warn("Error getting stats for %v: %v", *config, err)
+		return
+	}
+
+	for {
+		next, err := os.Stat(fileName)
+
+		if err != nil {
+			serv.Warn("Error getting stats for %v: %v", *config, err)
+		} else if next.ModTime() != curr.ModTime() {
+			curr = next
+			ch <- true
+			time.Sleep(time.Second * 15)
+		} else {
+			time.Sleep(time.Second * 60)
+		}
+	}
+}
+
+func setupHandler() {
 	serv.Info("Reading configuration from %v", *config)
 	contents, err := ioutil.ReadFile(*config)
 
@@ -43,15 +85,7 @@ func main() {
 	}
 
 	decls, matches := serv.Parse(string(contents))
-	servers, env := serv.Runtime(decls, matches)
-
-	if cache, ok := env.GetValue("cache"); ok && *certCache == "" {
-		*certCache = cache.Value()
-	}
-
-	if domains, ok := env.GetValue("domains"); ok {
-		certDomains = append(certDomains, domains.Values()...)
-	}
+	servers, _ := serv.Runtime(decls, matches)
 
 	supervisor := http.NewServeMux()
 	http.DefaultServeMux = supervisor
@@ -73,6 +107,26 @@ func main() {
 			serv.Warn("No matches found")
 		}
 	})
+}
+
+func setupListener() {
+	serv.Info("Reading configuration from %v", *config)
+	contents, err := ioutil.ReadFile(*config)
+
+	if err != nil {
+		serv.Fatal("Error reading Servfile: %v", err)
+	}
+
+	decls, matches := serv.Parse(string(contents))
+	_, env := serv.Runtime(decls, matches)
+
+	if cache, ok := env.GetValue("cache"); ok && *certCache == "" {
+		*certCache = cache.Value()
+	}
+
+	if domains, ok := env.GetValue("domains"); ok {
+		certDomains = append(certDomains, domains.Values()...)
+	}
 
 	if *listen == "" {
 		for _, domain := range certDomains {
@@ -97,6 +151,6 @@ func main() {
 		s.ListenAndServeTLS("", "")
 	} else {
 		serv.Info("Starting http server on %v", *listen)
-		serv.Fatal("%s", http.ListenAndServe(*listen, supervisor))
+		serv.Fatal("%s", http.ListenAndServe(*listen, nil))
 	}
 }
