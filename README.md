@@ -5,9 +5,11 @@ repositories, static files, setup redirects, execute commands, and create
 reverse proxies, use multiple subdomains. Once installed (`go install
 github.com/minond/serv`), create a `Servfile` file that is made up of server
 declaration with its paths, handlers, and any information needed to create the
-handler. For example:
+handler.
 
-```
+### Example configuration
+
+```text
 # Define ssl information, like Let's Encrypt cache location and domains to
 # whitelist. This is required when subdomains are in use.
 def cache ./cache
@@ -38,9 +40,11 @@ case Host(_, _, _) =>
 
 With this configuration, serv will checkout all repositories and serve them
 along with serving or proxying anything else you tell it to. Run `serv` in a
-directory with your `Servfile` and you're done. Additional options are:
+directory with your `Servfile` and you're done.
 
-```bash
+### Additional options
+
+```text
 -certCache string
       Path to Let's Encrypt cache file. Use this along with the cache definition.
 -certDomain value
@@ -70,6 +74,7 @@ using the [`setcap`](https://linux.die.net/man/8/setcap) command:
 sudo setcap 'cap_net_bind_service=+ep' $(which serv)
 ```
 
-### On Vim?
+### Editors and plugins
 
-Get the plugin at https://github.com/minond/vim-serv.
+I created a vim plugin for Serv, https://github.com/minond/vim-serv. Right now
+it only offers syntax highlighting.
