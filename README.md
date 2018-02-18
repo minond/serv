@@ -53,6 +53,13 @@ directory with your `Servfile` and you're done. Additional options are:
       Interval git repos are pulled at. (default 15m0s)
 ```
 
+### Updates to configuration file
+
+The configuration file is checked for updates every 60 seconds. On updates to
+handlers and their paths, the supervisor is re-created with the updated
+configuration. Note that a restart is required if new domains are added to the
+TLS whitelist (`domains` variable) or a new cache is used (`cache` variable).
+
 ### Listening on privileged ports
 
 Instead of running server as root (in order to bind to a privileged port, like
