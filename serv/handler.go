@@ -58,7 +58,7 @@ func PullGitRepo(repoURL string) {
 	cmd.Dir = path
 
 	if err = cmd.Run(); err != nil {
-		Fatal("Error running git pull on %v: %v", path, err)
+		Warn("Error running git pull on %v: %v", path, err)
 	}
 }
 

@@ -81,7 +81,8 @@ func setupHandler() {
 	contents, err := ioutil.ReadFile(*config)
 
 	if err != nil {
-		serv.Fatal("Error reading Servfile: %v", err)
+		serv.Warn("Error reading Servfile: %v", err)
+		return
 	}
 
 	decls, matches := serv.Parse(string(contents))
