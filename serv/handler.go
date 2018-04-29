@@ -202,7 +202,7 @@ func guessFileInDir(file, dir string) string {
 		return origPath
 	} else if exists, _ := fileExists(local404Path); exists == true {
 		return local404Path
-	} else {
-		return origPath
 	}
+
+	return origPath
 }
