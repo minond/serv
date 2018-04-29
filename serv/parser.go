@@ -7,19 +7,21 @@ import (
 
 type parser struct {
 	pos    int
-	tokens []Token
+	tokens []token
 }
 
 var eof = tok(eofToken, "<eof>")
 
-func Parse(raw string) ([]Declaration, []Match) {
+// Parse takes the string configuration, parses it, and returns a slice
+// of declarations and matchers.
+func Parse(raw string) ([]declaration, []match) {
 	p := parser{
 		pos:    0,
 		tokens: tokenize(preprocessor(raw)),
 	}
 
-	var decls []Declaration
-	var matches []Match
+	var decls []declaration
+	var matches []match
 
 	for !p.done() {
 		if p.peek().lexeme == "case" {
@@ -32,13 +34,13 @@ func Parse(raw string) ([]Declaration, []Match) {
 	return decls, matches
 }
 
-func (p *parser) match() Match {
+func (p *parser) match() match {
 	if p.eat().lexeme != "case" {
 		panic(fmt.Sprintf("Expecting `case` but found %s instead.",
 			p.prev().lexeme))
 	}
 
-	mat := Match{}
+	mat := match{}
 	mat.expr = p.expression()
 
 	if !p.matches(blockOpenToken) {
@@ -57,8 +59,8 @@ func (p *parser) match() Match {
 	return mat
 }
 
-func (p *parser) declaration() Declaration {
-	decl := Declaration{}
+func (p *parser) declaration() declaration {
+	decl := declaration{}
 
 	switch p.eat().lexeme {
 	case "path":
@@ -79,16 +81,16 @@ func (p *parser) declaration() Declaration {
 			p.peek().kind))
 	}
 
-	decl.value = p.expression()
+	decl.val = p.expression()
 	return decl
 }
 
-func (p *parser) expression() Expr {
-	expr := Expr{kind: expr}
+func (p *parser) expression() expr {
+	expr := expr{kind: exp}
 
 	// Handles "[" IDENTIFIER* "]"
 	if p.matches(openSqrToken) {
-		var items []Token
+		var items []token
 		expr.kind = list
 
 		for !p.matches(closeSqrToken) {
@@ -98,10 +100,10 @@ func (p *parser) expression() Expr {
 	} else {
 		// Handles IDENTIFIER
 		//       | IDENTIFIER "(" [IDENTIFIER ["," IDENTIFIER]*] ")" ;
-		expr.value = p.eat()
+		expr.val = p.eat()
 
 		if p.matches(openParToken) {
-			var args []Token
+			var args []token
 			expr.kind = call
 
 		arg:
@@ -140,26 +142,26 @@ func (p *parser) matches(kinds ...tokenKind) bool {
 	return false
 }
 
-func (p *parser) eat() Token {
+func (p *parser) eat() token {
 	if p.done() {
 		return eof
-	} else {
-		tok := p.peek()
-		p.pos += 1
-		return tok
 	}
+
+	tok := p.peek()
+	p.pos++
+	return tok
 }
 
-func (p parser) prev() Token {
+func (p parser) prev() token {
 	return p.tokens[p.pos-1]
 }
 
-func (p parser) peek() Token {
+func (p parser) peek() token {
 	if p.done() {
 		return eof
-	} else {
-		return p.tokens[p.pos]
 	}
+
+	return p.tokens[p.pos]
 }
 
 func (p parser) done() bool {
@@ -176,9 +178,9 @@ func preprocessor(raw string) string {
 	startsWith := func(prefix, str string) bool {
 		if len(str) == 0 {
 			return false
-		} else {
-			return strings.HasPrefix(strings.TrimSpace(str), prefix)
 		}
+
+		return strings.HasPrefix(strings.TrimSpace(str), prefix)
 	}
 
 	for _, line := range strings.Split(raw, "\n") {
@@ -192,8 +194,8 @@ func preprocessor(raw string) string {
 	return strings.Join(processed, "\n")
 }
 
-func tokenize(raw string) []Token {
-	var tokens []Token
+func tokenize(raw string) []token {
+	var tokens []token
 	letters := []rune(raw)
 	pos := 0
 
@@ -223,7 +225,7 @@ func tokenize(raw string) []Token {
 		case rune(':'):
 			if next(pos, letters).lexeme == "=" {
 				tokens = append(tokens, tok(defEqToken, ":="))
-				pos += 1
+				pos++
 			} else {
 				identifier()
 			}
@@ -231,7 +233,7 @@ func tokenize(raw string) []Token {
 		case rune('='):
 			if next(pos, letters).lexeme == ">" {
 				tokens = append(tokens, tok(blockOpenToken, "=>"))
-				pos += 1
+				pos++
 			} else {
 				identifier()
 			}
@@ -249,16 +251,16 @@ func tokenize(raw string) []Token {
 	return tokens
 }
 
-func tok(kind tokenKind, lexeme string) Token {
-	return Token{kind, lexeme}
+func tok(kind tokenKind, lexeme string) token {
+	return token{kind, lexeme}
 }
 
-func next(pos int, letters []rune) Token {
+func next(pos int, letters []rune) token {
 	if pos+1 > len(letters) {
 		return eof
-	} else {
-		return tok(identifierToken, string(letters[pos+1]))
 	}
+
+	return tok(identifierToken, string(letters[pos+1]))
 }
 
 func word(pos int, letters []rune) string {

@@ -24,7 +24,7 @@ var (
 
 // Turns https://github.com/minond/minond.github.io.git into
 // repo/github.com/minond/minond.github.io.git
-func GetRepoPath(repoURL string) (string, error) {
+func getRepoPath(repoURL string) (string, error) {
 	ur, err := url.Parse(repoURL)
 
 	if err != nil {
@@ -34,19 +34,19 @@ func GetRepoPath(repoURL string) (string, error) {
 	return _path.Join(rootDir, ur.Hostname(), ur.EscapedPath()), nil
 }
 
-func PullGitRepoInterval(repoURL string) {
+func pullGitRepoInterval(repoURL string) {
 	Info("Pulling %v every %v", repoURL, *pullInterval)
 
 	for {
 		time.Sleep(*pullInterval)
-		PullGitRepo(repoURL)
+		pullGitRepo(repoURL)
 	}
 }
 
-func PullGitRepo(repoURL string) {
-	path, err := GetRepoPath(repoURL)
+func pullGitRepo(repoURL string) {
+	path, err := getRepoPath(repoURL)
 
-	if found, _ := FileExists(path); !found {
+	if found, _ := fileExists(path); !found {
 		return
 	}
 
@@ -62,9 +62,8 @@ func PullGitRepo(repoURL string) {
 	}
 }
 
-// Clones repo into local folder
-func CheckoutGitRepo(repoURL string) (string, error) {
-	path, err := GetRepoPath(repoURL)
+func checkoutGitRepo(repoURL string) (string, error) {
+	path, err := getRepoPath(repoURL)
 
 	if err != nil {
 		return "", err
@@ -83,25 +82,25 @@ func CheckoutGitRepo(repoURL string) (string, error) {
 	return path, cmd.Run()
 }
 
-func LocalRepoExists(repoURL string) (bool, error) {
-	path, err := GetRepoPath(repoURL)
+func localRepoExists(repoURL string) (bool, error) {
+	path, err := getRepoPath(repoURL)
 
 	if err != nil {
 		return false, err
 	}
 
-	return FileExists(path)
+	return fileExists(path)
 }
 
-func AssertGitRepo(repoURL string) {
-	if exists, _ := LocalRepoExists(repoURL); exists == false {
-		if _, err := CheckoutGitRepo(repoURL); err != nil {
+func assertGitRepo(repoURL string) {
+	if exists, _ := localRepoExists(repoURL); exists == false {
+		if _, err := checkoutGitRepo(repoURL); err != nil {
 			panic(fmt.Sprintf("error checking out git repo: %v", err))
 		}
 	}
 }
 
-func FileExists(name string) (bool, error) {
+func fileExists(name string) (bool, error) {
 	_, err := os.Stat(name)
 
 	if err == nil {
@@ -111,23 +110,23 @@ func FileExists(name string) (bool, error) {
 	return false, nil
 }
 
-func AssertDir(name string) {
-	if exists, _ := FileExists(name); exists == false {
+func assertDir(name string) {
+	if exists, _ := fileExists(name); exists == false {
 		panic(fmt.Sprintf("expecting %v directory which does not exists", name))
 	}
 }
 
-func SetProxyHandler(mux *http.ServeMux, route Route) {
-	proxyURL, err := url.Parse(route.Data)
+func setProxyHandler(mux *http.ServeMux, route route) {
+	proxyURL, err := url.Parse(route.data)
 	proxyPath := proxyURL.Path
 
 	if err != nil {
-		panic(fmt.Sprintf("error parting proxy url (%v): %v", route.Data, err))
+		panic(fmt.Sprintf("error parting proxy url (%v): %v", route.data, err))
 	}
 
 	proxy := func(w http.ResponseWriter, r *http.Request) {
 		oldPath := r.URL.Path
-		newPath := strings.Replace(oldPath, route.Path, "", 1)
+		newPath := strings.Replace(oldPath, route.path, "", 1)
 
 		r.URL.Path = proxyPath + newPath
 
@@ -136,13 +135,13 @@ func SetProxyHandler(mux *http.ServeMux, route Route) {
 		handler.ServeHTTP(w, r)
 	}
 
-	mux.HandleFunc(route.Path, proxy)
-	mux.HandleFunc(route.Path+"/", proxy)
+	mux.HandleFunc(route.path, proxy)
+	mux.HandleFunc(route.path+"/", proxy)
 }
 
-func SetCmdHandler(mux *http.ServeMux, route Route) {
-	mux.HandleFunc(route.Path, func(w http.ResponseWriter, r *http.Request) {
-		parts := strings.Split(route.Data, " ")
+func setCmdHandler(mux *http.ServeMux, route route) {
+	mux.HandleFunc(route.path, func(w http.ResponseWriter, r *http.Request) {
+		parts := strings.Split(route.data, " ")
 		cmd := exec.Command(parts[0], parts[1:]...)
 		Info("Executing `%v` command", parts)
 
@@ -152,56 +151,56 @@ func SetCmdHandler(mux *http.ServeMux, route Route) {
 	})
 }
 
-func SetRedirectHandler(mux *http.ServeMux, route Route) {
-	mux.HandleFunc(route.Path, func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, route.Data, http.StatusSeeOther)
+func setRedirectHandler(mux *http.ServeMux, route route) {
+	mux.HandleFunc(route.path, func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, route.data, http.StatusSeeOther)
 	})
 }
 
-func SetDirHandler(mux *http.ServeMux, route Route) {
+func setDirHandler(mux *http.ServeMux, route route) {
 	serveFile := func(w http.ResponseWriter, r *http.Request) {
-		filePath := strings.Replace(r.URL.Path, route.Path, "", 1)
+		filePath := strings.Replace(r.URL.Path, route.path, "", 1)
 
 		if filePath == "" {
 			filePath = indexFile
 		}
 
-		loc := GuessFileInDir(filePath, route.Data)
+		loc := guessFileInDir(filePath, route.data)
 		Info("Serving %v from %v", r.URL.String(), loc)
 		http.ServeFile(w, r, loc)
 	}
 
 	slashRedirect := func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, route.Path+"/", http.StatusSeeOther)
+		http.Redirect(w, r, route.path+"/", http.StatusSeeOther)
 	}
 
-	if route.Path == "/" {
-		mux.HandleFunc(route.Path, serveFile)
+	if route.path == "/" {
+		mux.HandleFunc(route.path, serveFile)
 	} else {
-		mux.HandleFunc(route.Path, slashRedirect)
-		mux.HandleFunc(route.Path+"/", serveFile)
+		mux.HandleFunc(route.path, slashRedirect)
+		mux.HandleFunc(route.path+"/", serveFile)
 	}
 }
 
-func SetGitHandler(mux *http.ServeMux, route Route) {
-	rootPath, _ := GetRepoPath(route.Data)
-	route.Data = rootPath
-	SetDirHandler(mux, route)
+func setGitHandler(mux *http.ServeMux, route route) {
+	rootPath, _ := getRepoPath(route.data)
+	route.data = rootPath
+	setDirHandler(mux, route)
 }
 
 // NOTE This does have an issue in that if no local 404 file is found we should
 // fallback to /404.html, but we don't since this function (or the handler)
 // doesn't know about other routes and which one is on the / endpoint.
-func GuessFileInDir(file, dir string) string {
+func guessFileInDir(file, dir string) string {
 	origPath := _path.Join(dir, file)
 	htmlPath := origPath + ".html"
 	local404Path := _path.Join(dir, "404.html")
 
-	if exists, _ := FileExists(htmlPath); exists == true {
+	if exists, _ := fileExists(htmlPath); exists == true {
 		return htmlPath
-	} else if exists, _ := FileExists(origPath); exists == true {
+	} else if exists, _ := fileExists(origPath); exists == true {
 		return origPath
-	} else if exists, _ := FileExists(local404Path); exists == true {
+	} else if exists, _ := fileExists(local404Path); exists == true {
 		return local404Path
 	} else {
 		return origPath

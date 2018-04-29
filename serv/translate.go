@@ -5,15 +5,14 @@ import (
 	"strings"
 )
 
-// Translates an ast into setup and runtime informatin. `Match.expr` should be
-// used to generate the `Server.Match` function and `Match.decls` are the
-// routes.
-func Runtime(decls []Declaration, matches []Match) ([]Server, Environement) {
-	var servers []Server
-	env := NewEnvironment(decls)
+// Runtime takes parsed declarations and matches and builds the working http
+// handlers and an environment.
+func Runtime(decls []declaration, matches []match) ([]server, environement) {
+	var servers []server
+	env := newEnvironment(decls)
 
 	for _, match := range matches {
-		var routes []Route
+		var routes []route
 
 		Info("Generating %s", match.expr)
 
@@ -29,8 +28,8 @@ func Runtime(decls []Declaration, matches []Match) ([]Server, Environement) {
 			}
 		}
 
-		server := Server{
-			Routes: routes,
+		server := server{
+			routes: routes,
 			Match:  exprToMatch(env, match.expr),
 			Mux:    buildMux(routes),
 		}
@@ -41,40 +40,40 @@ func Runtime(decls []Declaration, matches []Match) ([]Server, Environement) {
 	return servers, env
 }
 
-func buildMux(routes []Route) *http.ServeMux {
+func buildMux(routes []route) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	for _, route := range routes {
-		Info("Creating handler for %v", route.Path)
-		route.Handler.Constructor(route, mux)
+		Info("Creating handler for %v", route.path)
+		route.handler.constructor(route, mux)
 	}
 
 	return mux
 }
 
-func exprToMatch(env Environement, expr Expr) func(http.Request) bool {
+func exprToMatch(env environement, expr expr) func(http.Request) bool {
 	if expr.kind != call {
 		Fatal("Expecting a call but found %s instead", expr.kind)
 	}
 
-	var matcher Matcher
+	var matcher matcher
 	var args []string
 
-	def, ok := env.Matchers[expr.value.lexeme]
+	def, ok := env.matchers[expr.val.lexeme]
 
-	if ok && def.Arity != len(expr.args) {
+	if ok && def.arity != len(expr.args) {
 		Fatal("Wrong number of arguments for %s. Expected %d but got %d.",
-			expr.value.lexeme, def.Arity, len(expr.args))
-		matcher = NullMatcher{}
+			expr.val.lexeme, def.arity, len(expr.args))
+		matcher = nullMatcher{}
 	} else if !ok {
-		Warn("Unknown matcher kind: %s", expr.value.lexeme)
-		matcher = NullMatcher{}
+		Warn("Unknown matcher kind: %s", expr.val.lexeme)
+		matcher = nullMatcher{}
 	} else {
 		for _, arg := range expr.args {
 			args = append(args, arg.lexeme)
 		}
 
-		matcher = def.Constructor(args...)
+		matcher = def.constructor(args...)
 	}
 
 	return func(r http.Request) bool {
@@ -82,22 +81,22 @@ func exprToMatch(env Environement, expr Expr) func(http.Request) bool {
 	}
 }
 
-func declToRoute(env Environement, decl Declaration) Route {
+func declToRoute(env environement, decl declaration) route {
 	var args []string
-	handler, ok := env.Handlers[decl.value.value.lexeme]
+	handler, ok := env.handlers[decl.val.val.lexeme]
 
 	if !ok {
 		Fatal("Invalid route kind: %s",
-			decl.value.value.lexeme)
+			decl.val.val.lexeme)
 	}
 
-	for _, arg := range decl.value.args {
+	for _, arg := range decl.val.args {
 		args = append(args, arg.lexeme)
 	}
 
-	return Route{
-		Handler: handler,
-		Path:    decl.key.lexeme,
-		Data:    strings.Join(args, " "),
+	return route{
+		handler: handler,
+		path:    decl.key.lexeme,
+		data:    strings.Join(args, " "),
 	}
 }

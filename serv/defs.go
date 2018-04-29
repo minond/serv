@@ -10,38 +10,38 @@ type tokenKind string
 type exprKind string
 type declKind string
 
-type Match struct {
-	expr  Expr
-	decls []Declaration
+type expr struct {
+	kind exprKind
+	val  token
+	args []token
 }
 
-type Declaration struct {
-	kind  declKind
-	key   Token
-	value Expr
+type match struct {
+	expr  expr
+	decls []declaration
 }
 
-type Expr struct {
-	kind  exprKind
-	value Token
-	args  []Token
+type declaration struct {
+	kind declKind
+	key  token
+	val  expr
 }
 
-type Token struct {
+type token struct {
 	kind   tokenKind
 	lexeme string
 }
 
-type Server struct {
+type server struct {
 	Match  func(http.Request) bool
-	Routes []Route
 	Mux    *http.ServeMux
+	routes []route
 }
 
-type Route struct {
-	Handler HandlerDef
-	Path    string
-	Data    string
+type route struct {
+	handler handlerDef
+	path    string
+	data    string
 }
 
 const (
@@ -57,13 +57,13 @@ const (
 
 	call exprKind = "call"
 	list exprKind = "list"
-	expr exprKind = "expr"
+	exp  exprKind = "exp"
 
 	path declKind = "path"
 	def  declKind = "def"
 )
 
-func (m Match) String() string {
+func (m match) String() string {
 	var decls []string
 
 	for _, decl := range m.decls {
@@ -73,20 +73,20 @@ func (m Match) String() string {
 	return fmt.Sprintf("case %s =>\n%s", m.expr, strings.Join(decls, ""))
 }
 
-func (d Declaration) String() string {
+func (d declaration) String() string {
 	switch d.kind {
 	case path:
-		return fmt.Sprintf("path %s %s", d.key.lexeme, d.value)
+		return fmt.Sprintf("path %s %s", d.key.lexeme, d.val)
 
 	case def:
-		return fmt.Sprintf("def %s %s", d.key.lexeme, d.value)
+		return fmt.Sprintf("def %s %s", d.key.lexeme, d.val)
 
 	default:
 		return "<Invalid Declaration>"
 	}
 }
 
-func (e Expr) String() string {
+func (e expr) String() string {
 	switch e.kind {
 	case call:
 		var args []string
@@ -95,7 +95,7 @@ func (e Expr) String() string {
 			args = append(args, fmt.Sprintf("%s", arg.lexeme))
 		}
 
-		return fmt.Sprintf("%s(%s)", e.value.lexeme, strings.Join(args, ", "))
+		return fmt.Sprintf("%s(%s)", e.val.lexeme, strings.Join(args, ", "))
 
 	case list:
 		var items []string
@@ -106,23 +106,23 @@ func (e Expr) String() string {
 
 		return fmt.Sprintf("[%s]", strings.Join(items, " "))
 
-	case expr:
-		return fmt.Sprintf("%s", e.value.lexeme)
+	case exp:
+		return fmt.Sprintf("%s", e.val.lexeme)
 
 	default:
 		return "<Invalid Expression>"
 	}
 }
 
-func (e Expr) Value() string {
-	if e.kind == expr {
-		return e.value.lexeme
-	} else {
-		return ""
+func (e expr) Value() string {
+	if e.kind == exp {
+		return e.val.lexeme
 	}
+
+	return ""
 }
 
-func (e Expr) Values() []string {
+func (e expr) Values() []string {
 	if e.kind == list {
 		var vals []string
 
@@ -131,7 +131,7 @@ func (e Expr) Values() []string {
 		}
 
 		return vals
-	} else {
-		return []string{}
 	}
+
+	return []string{}
 }

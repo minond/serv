@@ -5,56 +5,55 @@ import (
 	"strings"
 )
 
-type Environement struct {
-	Matchers     map[string]MatcherDef
-	Handlers     map[string]HandlerDef
-	Declarations []Declaration
+type environement struct {
+	matchers     map[string]matcherDef
+	handlers     map[string]handlerDef
+	declarations []declaration
 }
 
-type RuntimeValue struct {
-	Value string
+type runtimeValue struct {
+	value string
 }
 
-type HandlerDef struct {
-	Arity       int
-	Constructor func(Route, *http.ServeMux)
+type handlerDef struct {
+	arity       int
+	constructor func(route, *http.ServeMux)
 }
 
-type MatcherDef struct {
-	Arity       int
-	Constructor func(...string) Matcher
+type matcherDef struct {
+	arity       int
+	constructor func(...string) matcher
 }
 
-type Matcher interface {
+type matcher interface {
 	Match(http.Request) bool
 }
 
-type NullMatcher struct {
+type nullMatcher struct{}
+
+type hostMatcher struct {
+	subdomain runtimeValue
+	domain    runtimeValue
+	tld       runtimeValue
 }
 
-type HostMatcher struct {
-	Subdomain RuntimeValue
-	Domain    RuntimeValue
-	Tld       RuntimeValue
+func value(val string) runtimeValue {
+	return runtimeValue{value: val}
 }
 
-func Value(val string) RuntimeValue {
-	return RuntimeValue{Value: val}
-}
-
-func (v RuntimeValue) Equals(other string) bool {
-	if v.Value == "_" {
+func (v runtimeValue) equals(other string) bool {
+	if v.value == "_" {
 		return true
-	} else {
-		return v.Value == other
 	}
+
+	return v.value == other
 }
 
-func (n NullMatcher) Match(r http.Request) bool {
+func (n nullMatcher) Match(r http.Request) bool {
 	return false
 }
 
-func (h HostMatcher) Match(r http.Request) bool {
+func (h hostMatcher) Match(r http.Request) bool {
 	parts := strings.Split(r.Host, ".")
 	subdomain := ""
 	domain := ""
@@ -74,71 +73,71 @@ func (h HostMatcher) Match(r http.Request) bool {
 		tld = parts[2]
 	}
 
-	return h.Subdomain.Equals(subdomain) &&
-		h.Domain.Equals(domain) &&
-		h.Tld.Equals(tld)
+	return h.subdomain.equals(subdomain) &&
+		h.domain.equals(domain) &&
+		h.tld.equals(tld)
 }
 
-func NewEnvironment(decls []Declaration) Environement {
-	return Environement{
-		Declarations: decls,
-		Matchers: map[string]MatcherDef{
+func newEnvironment(decls []declaration) environement {
+	return environement{
+		declarations: decls,
+		matchers: map[string]matcherDef{
 			"Host": {
-				Arity: 3,
-				Constructor: func(args ...string) Matcher {
-					return HostMatcher{
-						Subdomain: Value(args[0]),
-						Domain:    Value(args[1]),
-						Tld:       Value(args[2]),
+				arity: 3,
+				constructor: func(args ...string) matcher {
+					return hostMatcher{
+						subdomain: value(args[0]),
+						domain:    value(args[1]),
+						tld:       value(args[2]),
 					}
 				},
 			},
 		},
 
-		Handlers: map[string]HandlerDef{
+		handlers: map[string]handlerDef{
 			"git": {
-				Arity: 1,
-				Constructor: func(route Route, mux *http.ServeMux) {
-					AssertGitRepo(route.Data)
-					SetGitHandler(mux, route)
-					go PullGitRepoInterval(route.Data)
+				arity: 1,
+				constructor: func(route route, mux *http.ServeMux) {
+					assertGitRepo(route.data)
+					setGitHandler(mux, route)
+					go pullGitRepoInterval(route.data)
 				},
 			},
 			"dir": {
-				Arity: 1,
-				Constructor: func(route Route, mux *http.ServeMux) {
-					AssertDir(route.Data)
-					SetDirHandler(mux, route)
+				arity: 1,
+				constructor: func(route route, mux *http.ServeMux) {
+					assertDir(route.data)
+					setDirHandler(mux, route)
 				},
 			},
 			"redirect": {
-				Arity: 1,
-				Constructor: func(route Route, mux *http.ServeMux) {
-					SetRedirectHandler(mux, route)
+				arity: 1,
+				constructor: func(route route, mux *http.ServeMux) {
+					setRedirectHandler(mux, route)
 				},
 			},
 			"cmd": {
-				Arity: 1,
-				Constructor: func(route Route, mux *http.ServeMux) {
-					SetCmdHandler(mux, route)
+				arity: 1,
+				constructor: func(route route, mux *http.ServeMux) {
+					setCmdHandler(mux, route)
 				},
 			},
 			"proxy": {
-				Arity: 1,
-				Constructor: func(route Route, mux *http.ServeMux) {
-					SetProxyHandler(mux, route)
+				arity: 1,
+				constructor: func(route route, mux *http.ServeMux) {
+					setProxyHandler(mux, route)
 				},
 			},
 		},
 	}
 }
 
-func (env Environement) GetValue(name string) (Expr, bool) {
-	for _, decl := range env.Declarations {
+func (env environement) GetValue(name string) (expr, bool) {
+	for _, decl := range env.declarations {
 		if decl.key.lexeme == name {
-			return decl.value, true
+			return decl.val, true
 		}
 	}
 
-	return Expr{}, false
+	return expr{}, false
 }
