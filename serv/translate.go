@@ -2,7 +2,6 @@ package serv
 
 import (
 	"net/http"
-	"strings"
 )
 
 // Runtime takes parsed declarations and matches and builds the working http
@@ -97,6 +96,6 @@ func declToRoute(env environement, decl declaration) route {
 	return route{
 		handler: handler,
 		path:    decl.key.lexeme,
-		data:    strings.Join(args, " "),
+		data:    args,
 	}
 }

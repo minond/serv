@@ -117,11 +117,11 @@ func assertDir(name string) {
 }
 
 func setProxyHandler(mux *http.ServeMux, route route) {
-	proxyURL, err := url.Parse(route.data)
+	proxyURL, err := url.Parse(route.data[0])
 	proxyPath := proxyURL.Path
 
 	if err != nil {
-		panic(fmt.Sprintf("error parting proxy url (%v): %v", route.data, err))
+		panic(fmt.Sprintf("error parting proxy url (%v): %v", route.data[0], err))
 	}
 
 	proxy := func(w http.ResponseWriter, r *http.Request) {
@@ -141,7 +141,7 @@ func setProxyHandler(mux *http.ServeMux, route route) {
 
 func setCmdHandler(mux *http.ServeMux, route route) {
 	mux.HandleFunc(route.path, func(w http.ResponseWriter, r *http.Request) {
-		parts := strings.Split(route.data, " ")
+		parts := route.data
 		cmd := exec.Command(parts[0], parts[1:]...)
 		Info("Executing `%v` command", parts)
 
@@ -153,7 +153,7 @@ func setCmdHandler(mux *http.ServeMux, route route) {
 
 func setRedirectHandler(mux *http.ServeMux, route route) {
 	mux.HandleFunc(route.path, func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, route.data, http.StatusSeeOther)
+		http.Redirect(w, r, route.data[0], http.StatusSeeOther)
 	})
 }
 
@@ -165,7 +165,7 @@ func setDirHandler(mux *http.ServeMux, route route) {
 			filePath = indexFile
 		}
 
-		loc := guessFileInDir(filePath, route.data)
+		loc := guessFileInDir(filePath, route.data[0])
 		Info("Serving %v from %v", r.URL.String(), loc)
 		http.ServeFile(w, r, loc)
 	}
@@ -183,8 +183,14 @@ func setDirHandler(mux *http.ServeMux, route route) {
 }
 
 func setGitHandler(mux *http.ServeMux, route route) {
-	rootPath, _ := getRepoPath(route.data)
-	route.data = rootPath
+	rootPath, _ := getRepoPath(route.data[0])
+
+	if len(route.data) > 1 {
+		route.data = []string{_path.Join(rootPath, route.data[1])}
+	} else {
+		route.data[0] = rootPath
+	}
+
 	setDirHandler(mux, route)
 }
 

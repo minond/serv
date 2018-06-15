@@ -41,7 +41,7 @@ type server struct {
 type route struct {
 	handler handlerDef
 	path    string
-	data    string
+	data    []string
 }
 
 const (

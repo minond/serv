@@ -98,15 +98,15 @@ func newEnvironment(decls []declaration) environement {
 			"git": {
 				arity: 1,
 				constructor: func(route route, mux *http.ServeMux) {
-					assertGitRepo(route.data)
+					assertGitRepo(route.data[0])
 					setGitHandler(mux, route)
-					go pullGitRepoInterval(route.data)
+					go pullGitRepoInterval(route.data[0])
 				},
 			},
 			"dir": {
 				arity: 1,
 				constructor: func(route route, mux *http.ServeMux) {
-					assertDir(route.data)
+					assertDir(route.data[0])
 					setDirHandler(mux, route)
 				},
 			},
