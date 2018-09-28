@@ -42,13 +42,13 @@ func main() {
 	go setupListener()
 	go watch(*config, ch)
 
-	info("Watching %v for changes", *config)
+	info("watching %v for changes", *config)
 
 	for {
 		<-ch
-		info("Reacting to changes in %v", *config)
+		info("reacting to changes in %v", *config)
 		setupHandler()
-		info("Applied updates to %v", *config)
+		info("applied updates to %v", *config)
 	}
 }
 
@@ -56,7 +56,7 @@ func watch(fileName string, ch chan bool) {
 	curr, err := os.Stat(fileName)
 
 	if err != nil {
-		warn("Error getting stats for %v: %v", *config, err)
+		warn("error getting stats for %v: %v", *config, err)
 		return
 	}
 
@@ -64,7 +64,7 @@ func watch(fileName string, ch chan bool) {
 		next, err := os.Stat(fileName)
 
 		if err != nil {
-			warn("Error getting stats for %v: %v", *config, err)
+			warn("error getting stats for %v: %v", *config, err)
 		} else if next.ModTime() != curr.ModTime() {
 			curr = next
 			ch <- true
@@ -76,11 +76,11 @@ func watch(fileName string, ch chan bool) {
 }
 
 func setupHandler() {
-	info("Reading configuration from %v", *config)
+	info("reading configuration from %v", *config)
 	contents, err := ioutil.ReadFile(*config)
 
 	if err != nil {
-		warn("Error reading Servfile: %v", err)
+		warn("error reading Servfile: %v", err)
 		return
 	}
 
@@ -94,7 +94,7 @@ func setupHandler() {
 		handled := false
 
 		for i, server := range servers {
-			info("Comparing request to server #%d", i+1)
+			info("comparing request to server #%d", i+1)
 
 			if server.Match(*r) {
 				server.Mux.ServeHTTP(w, r)
@@ -104,13 +104,13 @@ func setupHandler() {
 		}
 
 		if !handled {
-			warn("No matches found")
+			warn("no matches found")
 		}
 	})
 }
 
 func setupListener() {
-	info("Reading configuration from %v", *config)
+	info("reading configuration from %v", *config)
 	contents, err := ioutil.ReadFile(*config)
 
 	if err != nil {
@@ -130,7 +130,7 @@ func setupListener() {
 
 	if *listen == "" {
 		for _, domain := range certDomains {
-			info("Whitelisting %s", domain)
+			info("whitelisting %s", domain)
 		}
 
 		m := &autocert.Manager{
@@ -150,7 +150,7 @@ func setupListener() {
 
 		fatal("%s", s.ListenAndServeTLS("", ""))
 	} else {
-		info("Starting http server on %v", *listen)
+		info("starting http server on %v", *listen)
 		fatal("%s", http.ListenAndServe(*listen, nil))
 	}
 }

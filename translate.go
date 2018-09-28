@@ -13,17 +13,17 @@ func runtime(decls []declaration, matches []match) ([]server, environement) {
 	for _, match := range matches {
 		var routes []route
 
-		info("Generating %s", match.expr)
+		info("generating %s", match.expr)
 
 		for _, decl := range match.decls {
-			info("Mounting %s", decl)
+			info("mounting %s", decl)
 
 			switch decl.kind {
 			case path:
 				routes = append(routes, declToRoute(env, decl))
 
 			default:
-				warn("Unknown declaration kind: %s", decl.kind)
+				warn("unknown declaration kind: %s", decl.kind)
 			}
 		}
 
@@ -43,7 +43,7 @@ func buildMux(routes []route) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	for _, route := range routes {
-		info("Creating handler for %v", route.path)
+		info("creating handler for %v", route.path)
 		route.handler.constructor(route, mux)
 	}
 
@@ -65,7 +65,7 @@ func exprToMatch(env environement, expr expr) func(http.Request) bool {
 			expr.val.lexeme, def.arity, len(expr.args))
 		matcher = nullMatcher{}
 	} else if !ok {
-		warn("Unknown matcher kind: %s", expr.val.lexeme)
+		warn("unknown matcher kind: %s", expr.val.lexeme)
 		matcher = nullMatcher{}
 	} else {
 		for _, arg := range expr.args {
