@@ -35,7 +35,7 @@ func getRepoPath(repoURL string) (string, error) {
 }
 
 func pullGitRepoInterval(repoURL string) {
-	Info("Pulling %v every %v", repoURL, *pullInterval)
+	info("Pulling %v every %v", repoURL, *pullInterval)
 
 	for {
 		time.Sleep(*pullInterval)
@@ -50,7 +50,7 @@ func pullGitRepo(repoURL string) {
 		return
 	}
 
-	Info("Running git pull on %v", path)
+	info("Running git pull on %v", path)
 
 	cmd := exec.Command("git", "pull")
 	cmd.Stdout = os.Stdout
@@ -58,7 +58,7 @@ func pullGitRepo(repoURL string) {
 	cmd.Dir = path
 
 	if err = cmd.Run(); err != nil {
-		Warn("Error running git pull on %v: %v", path, err)
+		warn("Error running git pull on %v: %v", path, err)
 	}
 }
 
@@ -69,7 +69,7 @@ func checkoutGitRepo(repoURL string) (string, error) {
 		return "", err
 	}
 
-	Info("Mkdir %v", path)
+	info("Mkdir %v", path)
 	err = os.MkdirAll(path, 0755)
 
 	if err != nil {
@@ -130,7 +130,7 @@ func setProxyHandler(mux *http.ServeMux, route route) {
 
 		r.URL.Path = proxyPath + newPath
 
-		Info("Making request to %v", r.URL)
+		info("Making request to %v", r.URL)
 		handler := httputil.NewSingleHostReverseProxy(proxyURL)
 		handler.ServeHTTP(w, r)
 	}
@@ -143,11 +143,13 @@ func setCmdHandler(mux *http.ServeMux, route route) {
 	mux.HandleFunc(route.path, func(w http.ResponseWriter, r *http.Request) {
 		parts := route.data
 		cmd := exec.Command(parts[0], parts[1:]...)
-		Info("Executing `%v` command", parts)
+		info("Executing `%v` command", parts)
 
 		cmd.Stdout = w
 		cmd.Stderr = w
-		cmd.Run()
+		if err := cmd.Run(); err != nil {
+			warn("error running `%s` command: %v", strings.Join(parts, " "), err)
+		}
 	})
 }
 
@@ -166,7 +168,7 @@ func setDirHandler(mux *http.ServeMux, route route) {
 		}
 
 		loc := guessFileInDir(filePath, route.data[0])
-		Info("Serving %v from %v", r.URL.String(), loc)
+		info("Serving %v from %v", r.URL.String(), loc)
 		http.ServeFile(w, r, loc)
 	}
 

@@ -14,7 +14,7 @@ var eof = tok(eofToken, "<eof>")
 
 // Parse takes the string configuration, parses it, and returns a slice
 // of declarations and matchers.
-func Parse(raw string) ([]declaration, []match) {
+func parse(raw string) ([]declaration, []match) {
 	p := parser{
 		pos:    0,
 		tokens: tokenize(preprocessor(raw)),

@@ -6,24 +6,24 @@ import (
 
 // Runtime takes parsed declarations and matches and builds the working http
 // handlers and an environment.
-func Runtime(decls []declaration, matches []match) ([]server, environement) {
+func runtime(decls []declaration, matches []match) ([]server, environement) {
 	var servers []server
 	env := newEnvironment(decls)
 
 	for _, match := range matches {
 		var routes []route
 
-		Info("Generating %s", match.expr)
+		info("Generating %s", match.expr)
 
 		for _, decl := range match.decls {
-			Info("Mounting %s", decl)
+			info("Mounting %s", decl)
 
 			switch decl.kind {
 			case path:
 				routes = append(routes, declToRoute(env, decl))
 
 			default:
-				Warn("Unknown declaration kind: %s", decl.kind)
+				warn("Unknown declaration kind: %s", decl.kind)
 			}
 		}
 
@@ -43,7 +43,7 @@ func buildMux(routes []route) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	for _, route := range routes {
-		Info("Creating handler for %v", route.path)
+		info("Creating handler for %v", route.path)
 		route.handler.constructor(route, mux)
 	}
 
@@ -52,7 +52,7 @@ func buildMux(routes []route) *http.ServeMux {
 
 func exprToMatch(env environement, expr expr) func(http.Request) bool {
 	if expr.kind != call {
-		Fatal("Expecting a call but found %s instead", expr.kind)
+		fatal("Expecting a call but found %s instead", expr.kind)
 	}
 
 	var matcher matcher
@@ -61,11 +61,11 @@ func exprToMatch(env environement, expr expr) func(http.Request) bool {
 	def, ok := env.matchers[expr.val.lexeme]
 
 	if ok && def.arity != len(expr.args) {
-		Fatal("Wrong number of arguments for %s. Expected %d but got %d.",
+		fatal("Wrong number of arguments for %s. Expected %d but got %d.",
 			expr.val.lexeme, def.arity, len(expr.args))
 		matcher = nullMatcher{}
 	} else if !ok {
-		Warn("Unknown matcher kind: %s", expr.val.lexeme)
+		warn("Unknown matcher kind: %s", expr.val.lexeme)
 		matcher = nullMatcher{}
 	} else {
 		for _, arg := range expr.args {
@@ -85,7 +85,7 @@ func declToRoute(env environement, decl declaration) route {
 	handler, ok := env.handlers[decl.val.val.lexeme]
 
 	if !ok {
-		Fatal("Invalid route kind: %s",
+		fatal("Invalid route kind: %s",
 			decl.val.val.lexeme)
 	}
 

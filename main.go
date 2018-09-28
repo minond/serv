@@ -42,13 +42,13 @@ func main() {
 	go setupListener()
 	go watch(*config, ch)
 
-	Info("Watching %v for changes", *config)
+	info("Watching %v for changes", *config)
 
 	for {
 		<-ch
-		Info("Reacting to changes in %v", *config)
+		info("Reacting to changes in %v", *config)
 		setupHandler()
-		Info("Applied updates to %v", *config)
+		info("Applied updates to %v", *config)
 	}
 }
 
@@ -56,7 +56,7 @@ func watch(fileName string, ch chan bool) {
 	curr, err := os.Stat(fileName)
 
 	if err != nil {
-		Warn("Error getting stats for %v: %v", *config, err)
+		warn("Error getting stats for %v: %v", *config, err)
 		return
 	}
 
@@ -64,7 +64,7 @@ func watch(fileName string, ch chan bool) {
 		next, err := os.Stat(fileName)
 
 		if err != nil {
-			Warn("Error getting stats for %v: %v", *config, err)
+			warn("Error getting stats for %v: %v", *config, err)
 		} else if next.ModTime() != curr.ModTime() {
 			curr = next
 			ch <- true
@@ -76,16 +76,16 @@ func watch(fileName string, ch chan bool) {
 }
 
 func setupHandler() {
-	Info("Reading configuration from %v", *config)
+	info("Reading configuration from %v", *config)
 	contents, err := ioutil.ReadFile(*config)
 
 	if err != nil {
-		Warn("Error reading Servfile: %v", err)
+		warn("Error reading Servfile: %v", err)
 		return
 	}
 
-	decls, matches := Parse(string(contents))
-	servers, _ := Runtime(decls, matches)
+	decls, matches := parse(string(contents))
+	servers, _ := runtime(decls, matches)
 
 	supervisor := http.NewServeMux()
 	http.DefaultServeMux = supervisor
@@ -94,7 +94,7 @@ func setupHandler() {
 		handled := false
 
 		for i, server := range servers {
-			Info("Comparing request to server #%d", i+1)
+			info("Comparing request to server #%d", i+1)
 
 			if server.Match(*r) {
 				server.Mux.ServeHTTP(w, r)
@@ -104,21 +104,21 @@ func setupHandler() {
 		}
 
 		if !handled {
-			Warn("No matches found")
+			warn("No matches found")
 		}
 	})
 }
 
 func setupListener() {
-	Info("Reading configuration from %v", *config)
+	info("Reading configuration from %v", *config)
 	contents, err := ioutil.ReadFile(*config)
 
 	if err != nil {
-		Fatal("Error reading Servfile: %v", err)
+		fatal("Error reading Servfile: %v", err)
 	}
 
-	decls, matches := Parse(string(contents))
-	_, env := Runtime(decls, matches)
+	decls, matches := parse(string(contents))
+	_, env := runtime(decls, matches)
 
 	if cache, ok := env.GetValue("cache"); ok && *certCache == "" {
 		*certCache = cache.Value()
@@ -130,7 +130,7 @@ func setupListener() {
 
 	if *listen == "" {
 		for _, domain := range certDomains {
-			Info("Whitelisting %s", domain)
+			info("Whitelisting %s", domain)
 		}
 
 		m := &autocert.Manager{
@@ -140,7 +140,7 @@ func setupListener() {
 		}
 
 		go func() {
-			Fatal("%s", http.ListenAndServe(":http", m.HTTPHandler(nil)))
+			fatal("%s", http.ListenAndServe(":http", m.HTTPHandler(nil)))
 		}()
 
 		s := &http.Server{
@@ -148,9 +148,9 @@ func setupListener() {
 			TLSConfig: &tls.Config{GetCertificate: m.GetCertificate},
 		}
 
-		s.ListenAndServeTLS("", "")
+		fatal("%s", s.ListenAndServeTLS("", ""))
 	} else {
-		Info("Starting http server on %v", *listen)
-		Fatal("%s", http.ListenAndServe(*listen, nil))
+		info("Starting http server on %v", *listen)
+		fatal("%s", http.ListenAndServe(*listen, nil))
 	}
 }
