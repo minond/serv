@@ -133,9 +133,11 @@ func setProxyHandler(mux *http.ServeMux, route route) {
 		info("making request to %v", r.URL)
 		handler := httputil.NewSingleHostReverseProxy(proxyURL)
 
-		r.Header.Add("X-Forwarded-Proto", "https")
-		r.Header.Add("X-Forwarded-Ssl", "on")
-		r.Header.Add("X-Forwarded-Port", "443")
+		if r.Header.Get("Upgrade") != "websocket" {
+			r.Header.Add("X-Forwarded-Proto", "https")
+			r.Header.Add("X-Forwarded-Ssl", "on")
+			r.Header.Add("X-Forwarded-Port", "443")
+		}
 
 		handler.ServeHTTP(w, r)
 	}
